@@ -13459,6 +13459,7 @@ export const DICIONARIO: Traducoes = {
   "Nome da conta social": { es: "Nombre de la cuenta social" },
   "Token de acesso social": { es: "Token de acceso social" },
   "Token de acesso da integração": { es: "Token de acceso de la integración" },
+  "Token de acesso do Meta Ads": { es: "Token de acceso de Meta Ads" },
   "Nome da conta financeira": { es: "Nombre de la cuenta financiera" },
   "ID da conta / Página": { es: "ID de la cuenta / Página" },
   "Fila de publicações": { es: "Cola de publicaciones" },
