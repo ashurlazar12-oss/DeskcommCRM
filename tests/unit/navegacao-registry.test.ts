@@ -173,7 +173,7 @@ describe("hubSections", () => {
     // dia contra o que se define uma vez. Lista EXATA: `toContain` deixaria uma
     // tela nova entrar sem que ninguém decidisse de que lado dela ela cai.
     const secoes = hubSections("crm", true, null);
-    expect(secoes.map((s) => s.section)).toEqual(["O dia a dia da venda", "Preparar a venda", "Fechar a venda"]);
+    expect(secoes.map((s) => s.section)).toEqual(["O dia a dia da venda", "Preparar a venda", "Imóveis", "Fechar a venda"]);
     expect(secoes.flatMap((s) => s.items.map((i) => i.href))).toEqual([
       "/app/prospecting",
       "/app/kanban",
@@ -186,6 +186,7 @@ describe("hubSections", () => {
       "/app/comandas",
       "/app/products",
       "/app/imports",
+      "/app/imoveis",
       "/app/settings/tenant/pipelines",
       "/app/proposals",
     ]);
