@@ -312,28 +312,83 @@ export async function salvarMarketingImovel(formData: FormData): Promise<Marketi
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
 
   const supabase = await createMarketingClient();
-  const { data, error } = await supabase
+  const { data: current, error: currentError } = await supabase
     .from("imoveis_marketing_assets")
-    .update({
-      headline: parsed.data.headline,
-      caption: parsed.data.caption,
-      hashtags: normalizarHashtags(parsed.data.hashtags),
-      cta: parsed.data.cta,
-      alt_text: parsed.data.alt_text,
-      status: "draft",
-      approved_at: null,
-      published_at: null,
-      updated_at: new Date().toISOString(),
-    })
+    .select("id, property_id, platform, language, revision, status")
     .eq("id", parsed.data.asset_id)
     .eq("organization_id", ctx.organizationId)
-    .select("id")
     .maybeSingle();
 
-  if (error) return { ok: false, error: "Não foi possível salvar o material de marketing." };
-  if (!data) return { ok: false, error: "Material de marketing não encontrado." };
+  if (currentError) return { ok: false, error: "Não foi possível carregar o material de marketing." };
+  if (!current) return { ok: false, error: "Material de marketing não encontrado." };
 
-  await auditMarketing("imoveis.marketing_updated", ctx.organizationId, ctx.user.id, "imoveis_marketing_asset", data.id, {});
+  let savedId = current.id;
+  let savedRevision = current.revision;
+
+  if (current.status === "draft") {
+    const { data, error } = await supabase
+      .from("imoveis_marketing_assets")
+      .update({
+        headline: parsed.data.headline,
+        caption: parsed.data.caption,
+        hashtags: normalizarHashtags(parsed.data.hashtags),
+        cta: parsed.data.cta,
+        alt_text: parsed.data.alt_text,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", current.id)
+      .eq("organization_id", ctx.organizationId)
+      .select("id, revision")
+      .maybeSingle();
+
+    if (error || !data) return { ok: false, error: "Não foi possível salvar o material de marketing." };
+    savedId = data.id;
+    savedRevision = data.revision;
+  } else {
+    const { data: latest } = await supabase
+      .from("imoveis_marketing_assets")
+      .select("revision")
+      .eq("organization_id", ctx.organizationId)
+      .eq("property_id", current.property_id)
+      .eq("platform", current.platform)
+      .eq("language", current.language)
+      .order("revision", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const nextRevision = (latest?.revision ?? current.revision) + 1;
+    const { data, error } = await supabase
+      .from("imoveis_marketing_assets")
+      .insert({
+        organization_id: ctx.organizationId,
+        property_id: current.property_id,
+        platform: current.platform,
+        language: current.language,
+        revision: nextRevision,
+        headline: parsed.data.headline,
+        caption: parsed.data.caption,
+        hashtags: normalizarHashtags(parsed.data.hashtags),
+        cta: parsed.data.cta,
+        alt_text: parsed.data.alt_text,
+        status: "draft",
+        generated_by_ai: false,
+      })
+      .select("id, revision")
+      .single();
+
+    if (error || !data) return { ok: false, error: "Não foi possível criar a nova revisão de marketing." };
+    savedId = data.id;
+    savedRevision = data.revision;
+  }
+
+  await auditMarketing(
+    "imoveis.marketing_updated",
+    ctx.organizationId,
+    ctx.user.id,
+    "imoveis_marketing_asset",
+    savedId,
+    { based_on_asset_id: current.id, revision: savedRevision },
+  );
   return { ok: true, message: "Marketing salvo." };
 }
 
