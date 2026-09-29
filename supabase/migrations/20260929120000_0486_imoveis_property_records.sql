@@ -105,6 +105,15 @@ begin
 end;
 $f$;
 
+-- Existing installations are upgraded only when the optional module table already exists.
+do $do$
+begin
+  if to_regclass('public.imoveis_properties') is not null then
+    perform public.fn_imoveis_provisionar();
+  end if;
+end;
+$do$;
+
 revoke execute on function public.fn_imoveis_provisionar() from public, anon, authenticated;
 grant execute on function public.fn_imoveis_provisionar() to service_role;
 
