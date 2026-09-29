@@ -147,12 +147,12 @@ describe("Imóveis — isolamento da galeria de imagens", () => {
     ).toBe(0);
   });
 
-  it("agent pode apagar imagem própria; manager de B não apaga imagem de A", () => {
-    expect(
-      writeCountAs(GOV_AGENT_A, `delete from public.imoveis_property_images where id = '${IMAGE_A}'`),
-    ).toBe(1);
+  it("manager de B não apaga imagem de A; agent pode apagar imagem própria", () => {
     expect(
       writeCountAs(USER_B, `delete from public.imoveis_property_images where id = '${IMAGE_A}'`),
     ).toBe(0);
+    expect(
+      writeCountAs(GOV_AGENT_A, `delete from public.imoveis_property_images where id = '${IMAGE_A}'`),
+    ).toBe(1);
   });
 });
