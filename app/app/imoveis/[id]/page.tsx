@@ -4,8 +4,10 @@ import { createImoveisClient, tabelaNaoInstalada, type ImovelImagemRow, type Imo
 import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { traduzir } from "@/lib/i18n/dicionario";
+import { readMarketingInitialData } from "@/lib/imoveis/marketing";
 
 import { ImovelDetalhe } from "./_client";
+import { MarketingPanel } from "./marketing-client";
 
 export const dynamic = "force-dynamic";
 
@@ -56,10 +58,13 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     : ((images ?? []) as ImovelImagemRow[]);
 
   const typedProperty = property as ImovelRow;
+  const marketing = await readMarketingInitialData(typedProperty.id, org.orgId);
   const t = (texto: string) => traduzir(texto, user.idioma);
   const podeGerenciar =
     user.is_platform_admin || ROLE_RANK[org.role] >= ROLE_RANK.agent;
   const podeExcluir =
+    user.is_platform_admin || ROLE_RANK[org.role] >= ROLE_RANK.manager;
+  const podePublicar =
     user.is_platform_admin || ROLE_RANK[org.role] >= ROLE_RANK.manager;
 
   return (
@@ -69,6 +74,12 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         initialImages={initialImages}
         podeGerenciar={podeGerenciar}
         podeExcluir={podeExcluir}
+      />
+      <MarketingPanel
+        propertyId={typedProperty.id}
+        initial={marketing}
+        podeGerenciar={podeGerenciar}
+        podePublicar={podePublicar}
       />
       <p className="sr-only">{t("Ficha completa da propriedade.")}</p>
     </div>
