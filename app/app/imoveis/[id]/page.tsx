@@ -8,9 +8,9 @@ import { ROLE_RANK } from "@/lib/auth/types";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { readMarketingInitialData } from "@/lib/imoveis/marketing";
 import {
-  createImoveisLeadsClient,
   type ImoveisLeadOption,
   type ImoveisLeadPropertyRow,
+  type ImoveisLeadsDatabase,
 } from "@/lib/imoveis/leads";
 
 import { ImovelDetalhe } from "./_client";
@@ -66,7 +66,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     : ((images ?? []) as ImovelImagemRow[]);
 
   const crm = await createClient();
-  const linksDb = await createImoveisLeadsClient();
+  const linksDb = (await createClient()) as unknown as import("@supabase/supabase-js").SupabaseClient<ImoveisLeadsDatabase>;
 
   const { data: links, error: linksError } = await linksDb
     .from("imoveis_lead_properties")
