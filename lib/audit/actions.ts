@@ -1002,8 +1002,6 @@ export const AUDIT_ACTIONS = [
   "imoveis.property_created",
   "imoveis.property_updated",
   "imoveis.property_deleted",
-  "imoveis.property_image_added",
-  "imoveis.property_image_deleted",
   "imoveis.property_details_updated",
   "imoveis.property_image_added",
   "imoveis.property_image_deleted",
