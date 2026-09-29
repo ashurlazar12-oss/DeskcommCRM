@@ -117,7 +117,7 @@ async function auditMarketing(
   organizationId: string,
   actorUserId: string,
   resourceType: string,
-  resourceId: string,
+  resourceId: string | null,
   metadata: Record<string, unknown>,
 ): Promise<void> {
   const requestHeaders = await headers();
