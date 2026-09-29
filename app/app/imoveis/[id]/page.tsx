@@ -6,7 +6,11 @@ import { createClient } from "@/lib/supabase/server";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { readMarketingInitialData } from "@/lib/imoveis/marketing";
-import type { ImoveisLeadOption, ImoveisLeadPropertyRow } from "@/lib/imoveis/leads";
+import {
+  createImoveisLeadsClient,
+  type ImoveisLeadOption,
+  type ImoveisLeadPropertyRow,
+} from "@/lib/imoveis/leads";
 
 import { ImovelDetalhe } from "./_client";
 import { MarketingPanel } from "./marketing-client";
@@ -61,8 +65,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     : ((images ?? []) as ImovelImagemRow[]);
 
   const crm = await createClient();
+  const linksDb = await createImoveisLeadsClient();
 
-  const { data: links, error: linksError } = await supabase
+  const { data: links, error: linksError } = await linksDb
     .from("imoveis_lead_properties")
     .select("id, organization_id, lead_id, property_id, relationship, notes, created_at, updated_at")
     .eq("property_id", property.id)
