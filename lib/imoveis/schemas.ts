@@ -39,11 +39,11 @@ export const imovelFormSchema = z.object({
   longitude: decimalOpcional,
   bedrooms: z.string().trim().regex(/^\d+$/, "Quartos inválidos."),
   bathrooms: decimalOpcional.refine(
-    (value) => value === "" || /^\d+(?:[.,]\d)?$/.test(value),
+    (value) => !value || /^\d+(?:[.,]\d)?$/.test(value),
     "Banheiros inválidos.",
   ),
   area_m2: decimalOpcional.refine(
-    (value) => value === "" || /^\d+(?:[.,]\d{1,2})?$/.test(value),
+    (value) => !value || /^\d+(?:[.,]\d{1,2})?$/.test(value),
     "Área inválida.",
   ),
 });
