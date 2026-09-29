@@ -107,6 +107,10 @@ export function matchLeadToProperty(
   const exclusion_reasons: string[] = [];
   const reasons: string[] = [];
 
+  if (property.status !== "available") {
+    exclusion_reasons.push("Imóvel não está disponível para recomendação.");
+  }
+
   if (criteria.listingType && criteria.listingType !== property.listing_type) {
     exclusion_reasons.push(
       `Tipo de negócio incompatível: lead ${criteria.listingType}, imóvel ${property.listing_type}.`,
