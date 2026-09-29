@@ -15,6 +15,8 @@ const ORG_B = "e4850000-0000-4000-8000-00000000000b";
 const USER_B = "e4850000-1111-4000-8000-00000000000b";
 const PROPERTY_A = "e4850000-2222-4000-8000-000000000001";
 const PROPERTY_B = "e4850000-2222-4000-8000-00000000000b";
+const IMAGE_A = "e4850000-3333-4000-8000-000000000001";
+const IMAGE_B = "e4850000-3333-4000-8000-00000000000b";
 
 beforeAll(() => {
   seedGov();
@@ -39,6 +41,12 @@ beforeAll(() => {
       values
         ('${PROPERTY_A}', '${GOV_ORG}', 'ERB-0001', 'available', 25000000, 'USD'),
         ('${PROPERTY_B}', '${ORG_B}', 'ERB-0002', 'draft', 30000000, 'USD');
+
+    insert into public.imoveis_property_images
+      (id, organization_id, property_id, image_url, alt_text, sort_order)
+      values
+        ('${IMAGE_A}', '${GOV_ORG}', '${PROPERTY_A}', 'https://example.com/a.jpg', 'A', 0),
+        ('${IMAGE_B}', '${ORG_B}', '${PROPERTY_B}', 'https://example.com/b.jpg', 'B', 0);
   `);
 });
 
@@ -100,5 +108,51 @@ describe("Imóveis — isolamento entre organizações", () => {
     expect(
       writeCountAs(GOV_MANAGER, `delete from public.imoveis_properties where id = '${PROPERTY_A}'`),
     ).toBe(1);
+  });
+});
+
+
+describe("Imóveis — isolamento da galeria de imagens", () => {
+  it("a galeria nasce com RLS e sem SELECT para anon", () => {
+    expect(
+      sql(`
+        select c.relrowsecurity::text || '|' ||
+               has_table_privilege('anon', c.oid, 'select')::text
+          from pg_class c
+         where c.oid = 'public.imoveis_property_images'::regclass;
+      `),
+    ).toBe("true|false");
+  });
+
+  it("usuário de B não lê imagens de A; usuário de A lê a sua", () => {
+    expect(countAs(USER_B, `select count(*) from public.imoveis_property_images where id = '${IMAGE_A}';`)).toBe(0);
+    expect(countAs(GOV_VIEWER, `select count(*) from public.imoveis_property_images where id = '${IMAGE_A}';`)).toBe(1);
+  });
+
+  it("viewer não adiciona imagem; agent adiciona na própria organização", () => {
+    const insert = `
+      insert into public.imoveis_property_images
+        (organization_id, property_id, image_url, alt_text, sort_order)
+        values ('${GOV_ORG}', '${PROPERTY_A}', 'https://example.com/new.jpg', 'new', 1)
+    `;
+
+    expect(writeCountAs(GOV_VIEWER, insert)).toBe(0);
+    expect(writeCountAs(GOV_AGENT_A, insert)).toBe(1);
+    expect(
+      writeCountAs(USER_B, `
+        insert into public.imoveis_property_images
+          (organization_id, property_id, image_url, alt_text, sort_order)
+          values ('${GOV_ORG}', '${PROPERTY_A}', 'https://example.com/cross.jpg', 'cross', 2)
+      `),
+    ).toBe(0);
+  });
+
+  it("agent pode apagar imagem própria; manager de B não apaga imagem de A", () => {
+    expect(
+      writeCountAs(GOV_AGENT_A, `delete from public.imoveis_property_images where id = '${IMAGE_A}'`),
+    ).toBe(1);
+    expect(
+      writeCountAs(USER_B, `delete from public.imoveis_property_images where id = '${IMAGE_A}'`),
+    ).toBe(0);
   });
 });
