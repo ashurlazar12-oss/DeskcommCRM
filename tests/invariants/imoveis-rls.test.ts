@@ -16,7 +16,6 @@ const USER_B = "e4850000-1111-4000-8000-00000000000b";
 const PROPERTY_A = "e4850000-2222-4000-8000-000000000001";
 const PROPERTY_B = "e4850000-2222-4000-8000-00000000000b";
 const IMAGE_A = "e4850000-3333-4000-8000-000000000001";
-const IMAGE_B = "e4850000-3333-4000-8000-00000000000b";
 
 beforeAll(() => {
   seedGov();
@@ -45,8 +44,7 @@ beforeAll(() => {
     insert into public.imoveis_property_images
       (id, organization_id, property_id, image_url, alt_text, sort_order)
       values
-        ('${IMAGE_A}', '${GOV_ORG}', '${PROPERTY_A}', 'https://example.com/a.jpg', 'A', 0),
-        ('${IMAGE_B}', '${ORG_B}', '${PROPERTY_B}', 'https://example.com/b.jpg', 'B', 0);
+        ('${IMAGE_A}', '${GOV_ORG}', '${PROPERTY_A}', 'https://example.com/a.jpg', 'A', 0);
   `);
 });
 
