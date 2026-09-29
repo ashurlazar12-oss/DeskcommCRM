@@ -42881,6 +42881,9 @@ begin
 end;
 $f$;
 
+revoke execute on function public.fn_imoveis_provisionar() from public, anon, authenticated;
+grant execute on function public.fn_imoveis_provisionar() to service_role;
+
 -- ---- VARREDURA anon: função nova nasce exposta em quem ATUALIZA (migration 0116) ----
 --
 -- ⚠️ DE PROPÓSITO, NENHUMA FUNÇÃO É CRIADA DEPOIS DESTE BLOCO. Apêndice que cria
