@@ -79,6 +79,16 @@ describe("Imóveis — isolamento entre organizações", () => {
     ).toBe(0);
   });
 
+  it("o código da propriedade é único dentro da organização", () => {
+    expect(() =>
+      sql(`
+        insert into public.imoveis_properties
+          (organization_id, property_code, status, price_cents, currency)
+        values ('${GOV_ORG}', 'ERB-0001', 'draft', 10000000, 'USD');
+      `),
+    ).toThrow(/imoveis_properties_org_code_uid/);
+  });
+
   it("agent edita; manager pode apagar; agent não pode apagar", () => {
     const edit = `update public.imoveis_properties
                       set status = 'reserved'
