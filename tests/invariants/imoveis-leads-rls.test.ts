@@ -16,6 +16,7 @@ const USER_B = "e4860000-1111-4000-8000-00000000000b";
 const LEAD_B = "e4860000-6666-4000-8000-00000000000b";
 const PROPERTY_A = "e4860000-2222-4000-8000-000000000001";
 const PROPERTY_B = "e4860000-2222-4000-8000-00000000000b";
+const PROPERTY_A2 = "e4860000-2222-4000-8000-000000000002";
 const LINK_A = "e4860000-7777-4000-8000-000000000001";
 
 beforeAll(() => {
@@ -52,6 +53,7 @@ beforeAll(() => {
       (id, organization_id, property_code, status, price_cents, currency)
       values
         ('${PROPERTY_A}', '${GOV_ORG}', 'REL-A', 'available', 25000000, 'USD'),
+        ('${PROPERTY_A2}', '${GOV_ORG}', 'REL-A2', 'available', 26000000, 'USD'),
         ('${PROPERTY_B}', '${ORG_B}', 'REL-B', 'available', 30000000, 'USD')
       on conflict (id) do nothing;
 
@@ -96,7 +98,7 @@ describe("Imóveis Phase 6 — leads e clientes", () => {
     const dml = `
       insert into public.imoveis_lead_properties
         (organization_id, lead_id, property_id, relationship)
-      values ('${GOV_ORG}', '${GOV_LEAD}', '${PROPERTY_A}', 'presented')
+      values ('${GOV_ORG}', '${GOV_LEAD}', '${PROPERTY_A2}', 'presented')
     `;
     expect(writeCountAs(GOV_AGENT_A, dml)).toBe(1);
   });
@@ -125,7 +127,7 @@ describe("Imóveis Phase 6 — leads e clientes", () => {
       sql(`
         insert into public.imoveis_lead_properties
           (organization_id, lead_id, property_id, relationship)
-        values ('${GOV_ORG}', '${GOV_LEAD}', '${PROPERTY_A}', 'matched');
+        values ('${GOV_ORG}', '${GOV_LEAD}', '${PROPERTY_A2}', 'matched');
       `),
     ).toThrow(/imoveis_lead_properties_relationship_check|violates check constraint/);
   });
