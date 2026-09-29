@@ -339,6 +339,15 @@ export const NAV_CATALOG = [
     // Inbox e o funil, que continuam no menu.
   },
   {
+    href: "/app/imoveis",
+    label: "Imóveis",
+    description: "Cadastre e acompanhe propriedades imobiliárias.",
+    icon: "Buildings",
+    group: "crm",
+    section: "Imóveis",
+    modulo: "imoveis",
+  },
+  {
     href: "/app/imports",
     label: "Importações",
     description: "Lotes CSV/XLSX de empresas, pessoas e telefones.",

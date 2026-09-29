@@ -13358,6 +13358,27 @@ export const DICIONARIO: Traducoes = {
   "Cadastro e gestão das propriedades imobiliárias, base para marketing, leads, matching e operação comercial.": {
     es: "Registro y gestión de propiedades inmobiliarias, base para marketing, leads, matching y operación comercial.",
   },
+  "Cadastre e acompanhe propriedades imobiliárias.": { es: "Registre y haga seguimiento de propiedades inmobiliarias." },
+
+  "propriedades": { es: "propiedades" },
+  "disponíveis": { es: "disponibles" },
+  "reservadas": { es: "reservadas" },
+  "Nova propriedade": { es: "Nueva propiedad" },
+  "Cadastre código, situação, preço e moeda para começar.": {
+    es: "Registre código, estado, precio y moneda para comenzar.",
+  },
+  "Código da propriedade": { es: "Código de la propiedad" },
+  "Gerado automaticamente": { es: "Generado automáticamente" },
+  "Reservado": { es: "Reservado" },
+  "Vendido": { es: "Vendido" },
+  "Alugado": { es: "Alquilado" },
+  "Criar propriedade": { es: "Crear propiedad" },
+  "Propriedades": { es: "Propiedades" },
+  "Os registros desta organização, protegidos pela mesma RLS do banco.": {
+    es: "Los registros de esta organización, protegidos por la misma RLS de la base de datos.",
+  },
+  "Nenhuma propriedade cadastrada ainda.": { es: "Aún no hay propiedades registradas." },
+
   "O agente consulta o banco de outro sistema da empresa, como um ERP ou outro CRM.": { es: "El agente consulta la base de datos de otro sistema de la empresa, como un ERP u otro CRM." },
   "A IA conduz um roteiro de perguntas na conversa e grava as respostas na ficha do cliente.": { es: "La IA conduce un guion de preguntas en la conversación y guarda las respuestas en la ficha del cliente." },
   "A IA monta a proposta pelos modelos da empresa e o PDF sai pelo WhatsApp.": { es: "La IA arma la propuesta con las plantillas de la empresa y el PDF sale por WhatsApp." },

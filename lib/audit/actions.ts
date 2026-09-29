@@ -999,6 +999,10 @@ export const AUDIT_ACTIONS = [
   "company_people.updated",
   "contacts.person_linked",
   "imports.companies_people",
+  "imoveis.property_created",
+  "imoveis.property_updated",
+  "imoveis.property_deleted",
+
 ] as const;
 
 /** Um código de auditoria. Derivado de `AUDIT_ACTIONS` — não redigite a lista. */
