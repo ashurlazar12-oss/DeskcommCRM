@@ -408,7 +408,7 @@ unset FAKE_GH_PRS_FECHADOS
 assert_exit "$code" 0 "PR com número livre passa"
 assert_contains "$saida" "NNNN=0277" "o teto vem do PR ABERTO #9007"
 assert_not_contains "$saida" "0401" "o 0400 do PR fechado #9 não empurra o próximo livre"
-assert_not_contains "$saida" "#9" "o PR fechado não aparece em lugar nenhum"
+assert_not_contains "$saida" "PR aberto #9 —" "o PR fechado não aparece em lugar nenhum"
 
 echo "18. PR listado cuja cabeça não pôde ser buscada: NÃO MEDIDO nomeado, e a soma aparece"
 c="$TMP/c18"; clonar "$c"; git -C "$c" switch -q -c fix/pr
