@@ -90,6 +90,75 @@ describe("imoveis agent", () => {
     });
   });
 
+
+  it("returns ranked available matches and excludes unavailable properties", async () => {
+    const db = fakeDb([
+      [{ ok: 1 }],
+      [
+        {
+          title: "Lead",
+          custom_fields: {
+            imoveis_listing_type: "sale",
+            imoveis_property_type: "house",
+            imoveis_max_price_cents: 1_000_000,
+            imoveis_min_bedrooms: 3,
+            imoveis_min_area_m2: 150,
+            imoveis_city: "Erbil",
+          },
+        },
+      ],
+      [
+        {
+          property_code: "A1",
+          title: "Casa compatível",
+          status: "available",
+          price_cents: 900_000,
+          currency: "IQD",
+          property_type: "house",
+          listing_type: "sale",
+          city: "Erbil",
+          bedrooms: 3,
+          bathrooms: 2,
+          area_m2: 180,
+          description: "Casa disponível.",
+        },
+        {
+          property_code: "A2",
+          title: "Casa vendida",
+          status: "sold",
+          price_cents: 850_000,
+          currency: "IQD",
+          property_type: "house",
+          listing_type: "sale",
+          city: "Erbil",
+          bedrooms: 3,
+          bathrooms: 2,
+          area_m2: 180,
+          description: "Não deve ser recomendada.",
+        },
+      ],
+    ]);
+
+    const result = await findImoveisMatches(
+      db,
+      { tenantId: "org-1", leadId: "lead-1" },
+    );
+
+    expect(result).toMatchObject({
+      ok: true,
+      status: "matches",
+      evaluated_properties: 2,
+      excluded_properties: 1,
+    });
+    if (!result.ok) return;
+    expect(result.matches).toHaveLength(1);
+    expect(result.matches[0]).toMatchObject({
+      property_code: "A1",
+      score: 95,
+      title: "Casa compatível",
+    });
+  });
+
   it("can update structured preferences with a tenant-scoped lead", async () => {
     const db = fakeDb([
       [{ ok: 1 }],
