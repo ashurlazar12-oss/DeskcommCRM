@@ -1,6 +1,7 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { audit } from "@/lib/audit";
-import { decryptSocialAccountToken, marketingBackoffMinutes } from "@/lib/imoveis/marketing";
+import { decryptSocialAccountToken, marketingBackoffMinutes, type MarketingDatabase } from "@/lib/imoveis/marketing";
 import { publishToMeta, PermanentMetaError } from "@/lib/imoveis/meta";
 import type { EventHandler, EventRow, HandlerResult } from "@/lib/event-log/dispatcher";
 
@@ -37,7 +38,7 @@ export const imoveisSocialPublishHandler: EventHandler = {
     const jobId = String(row.payload.job_id ?? row.entity_id ?? "");
     if (!jobId) return { consumer_key: HANDLER_KEY, status: "skipped", detail: "missing_job_id" };
 
-    const admin = createAdminClient();
+    const admin = createAdminClient() as unknown as SupabaseClient<MarketingDatabase>;
     const { data: jobData, error: jobError } = await admin
       .from("imoveis_publication_jobs")
       .select("id, organization_id, property_id, marketing_asset_id, social_account_id, status, scheduled_at, provider_media_container_id, attempts, next_attempt_at, updated_at")
@@ -131,6 +132,10 @@ export const imoveisSocialPublishHandler: EventHandler = {
           last_error: detail,
           updated_at: new Date().toISOString(),
         }).eq("id", job.id).eq("organization_id", job.organization_id);
+
+        await admin.from("imoveis_marketing_assets").update({
+          status: "failed",
+        }).eq("id", job.marketing_asset_id).eq("organization_id", job.organization_id);
 
         await audit({
           action: "imoveis.publication_failed",
