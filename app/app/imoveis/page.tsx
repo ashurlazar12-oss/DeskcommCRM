@@ -9,9 +9,6 @@ import { Imoveis } from "./_client";
 
 export const dynamic = "force-dynamic";
 
-const MODULO_NAO_INSTALADO =
-  "O módulo de imóveis não está instalado nesta instalação. Peça ao administrador para instalá-lo em Configurações da instalação › Módulos.";
-
 export default async function Page() {
   const user = await requireAuth();
   const org = await resolveActiveOrg(user);
@@ -32,8 +29,11 @@ export default async function Page() {
   }
 
   const properties = (data ?? []) as ImovelRow[];
-  const moduleError = error && tabelaNaoInstalada(error) ? MODULO_NAO_INSTALADO : undefined;
   const t = (texto: string) => traduzir(texto, user.idioma);
+  const moduleError =
+    error && tabelaNaoInstalada(error)
+      ? t("O módulo de imóveis não está instalado nesta instalação. Peça ao administrador para instalá-lo em Configurações da instalação › Módulos.")
+      : undefined;
   const podeGerenciar =
     !moduleError && (user.is_platform_admin || ROLE_RANK[org.role] >= ROLE_RANK.agent);
   const podeExcluir =
