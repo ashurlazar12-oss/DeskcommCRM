@@ -6,7 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import { audit } from "@/lib/audit";
-import { requireAuth } from "@/lib/auth/server";
+import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { resolveLanguageModel, DEFAULT_BOT_MODEL } from "@/lib/ai/gateway";
 import { encryptKey, bufToBytea } from "@/lib/crypto/aes_gcm";
@@ -57,13 +57,13 @@ const queueSchema = z.object({
 
 async function getContext(requiredRole: "agent" | "manager") {
   const user = await requireAuth();
-  const activeOrg = user.organizations.find((org) => org.organization_id === user.organizations[0]?.organization_id) ?? user.organizations[0];
+  const activeOrg = await resolveActiveOrg(user);
   if (!activeOrg) return null;
 
   const rank = user.is_platform_admin ? ROLE_RANK.admin : ROLE_RANK[activeOrg.role];
   if (rank < ROLE_RANK[requiredRole]) return null;
 
-  return { user, organizationId: activeOrg.organization_id };
+  return { user, organizationId: activeOrg.orgId };
 }
 
 function errorMessage(error: string): string {
