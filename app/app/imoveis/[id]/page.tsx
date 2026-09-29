@@ -58,7 +58,6 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     : ((images ?? []) as ImovelImagemRow[]);
 
   const typedProperty = property as ImovelRow;
-  const marketing = await readMarketingInitialData(typedProperty.id, org.orgId);
   const t = (texto: string) => traduzir(texto, user.idioma);
   const podeGerenciar =
     user.is_platform_admin || ROLE_RANK[org.role] >= ROLE_RANK.agent;
