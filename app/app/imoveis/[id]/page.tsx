@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { createImoveisClient, tabelaNaoInstalada, type ImovelImagemRow, type ImovelRow } from "@/lib/imoveis/server";
 import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
+import { createClient } from "@/lib/supabase/server";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { readMarketingInitialData } from "@/lib/imoveis/marketing";
@@ -59,6 +60,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     ? []
     : ((images ?? []) as ImovelImagemRow[]);
 
+  const crm = await createClient();
+
   const { data: links, error: linksError } = await supabase
     .from("imoveis_lead_properties")
     .select("id, organization_id, lead_id, property_id, relationship, notes, created_at, updated_at")
@@ -75,7 +78,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     : ((links ?? []) as ImoveisLeadPropertyRow[]);
 
   const leadIds = linkRows.map((link) => link.lead_id);
-  const { data: leadRows, error: leadsError } = await supabase
+  const { data: leadRows, error: leadsError } = await crm
     .from("crm_leads")
     .select("id, title, status, contact_id")
     .eq("organization_id", org.orgId)
@@ -101,7 +104,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   );
 
   const { data: contacts } = contactIds.length
-    ? await supabase
+    ? await crm
         .from("contacts")
         .select("id, name, display_name")
         .eq("organization_id", org.orgId)
