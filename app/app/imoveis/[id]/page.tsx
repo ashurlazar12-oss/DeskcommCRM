@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { createImoveisClient, tabelaNaoInstalada, type ImovelImagemRow, type ImovelRow } from "@/lib/imoveis/server";
 import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { createClient } from "@/lib/supabase/server";
+import { rotuloDoContato } from "@/lib/contacts/rotulo-do-contato";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { readMarketingInitialData } from "@/lib/imoveis/marketing";
@@ -123,7 +124,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       display_name: string | null;
     }>).map((contact) => [
       contact.id,
-      contact.display_name || contact.name || null,
+      rotuloDoContato({ display_name: contact.display_name, name: contact.name, phone_number: null }),
     ]),
   );
 
