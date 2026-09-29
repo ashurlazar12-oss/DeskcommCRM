@@ -58,6 +58,10 @@ begin
   create index if not exists imoveis_property_images_property_idx
     on public.imoveis_property_images (organization_id, property_id, sort_order);
 
+  -- Remove the initial single-column FK so the tenant-scoped composite FK is authoritative.
+  alter table public.imoveis_property_images
+    drop constraint if exists imoveis_property_images_property_id_fkey;
+
   -- Keep property/image tenancy coupled at the database boundary as well as in the server action.
   create unique index if not exists imoveis_properties_org_id_uid
     on public.imoveis_properties (organization_id, id);
