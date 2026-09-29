@@ -13,67 +13,52 @@ const textoOpcional = z
   .optional()
   .or(z.literal(""));
 
-const decimalOpcional = z
+const textoLongo = z.string().trim().max(5000);
+
+const numeroOpcional = z
   .string()
   .trim()
   .optional()
-  .or(z.literal(""))
-  .refine(
-    (value) =>
-      value === undefined ||
-      value === "" ||
-      /^-?\d{1,6}(?:[.,]\d{1,2})?$/.test(value),
-    "Informe um número válido.",
-  );
-
-function coordenadaOpcional(maxAbs: number) {
-  return decimalOpcional.refine(
-    (value) =>
-      value === undefined ||
-      value === "" ||
-      Math.abs(Number(value.replace(",", "."))) <= maxAbs,
-    "Informe uma coordenada válida.",
-  );
-}
+  .or(z.literal(""));
 
 export const imovelFormSchema = z.object({
   property_code: textoOpcional,
-  title: z.string().trim().max(120).optional().or(z.literal("")),
   status: z.enum(IMOVEIS_STATUS),
   price: z
     .string()
     .trim()
     .regex(/^\d+(?:[.,]\d{1,2})?$/, "Informe um preço maior ou igual a zero."),
   currency: z.string().trim().regex(/^[A-Z]{3}$/i, "Use uma moeda de três letras."),
+});
+
+export const imovelDetalhesSchema = z.object({
+  id: z.string().uuid(),
+  title: textoLongo.max(160),
   property_type: z.enum(IMOVEIS_PROPERTY_TYPES),
   listing_type: z.enum(IMOVEIS_LISTING_TYPES),
-  description: z.string().trim().max(5000).optional().or(z.literal("")),
-  address: z.string().trim().max(240).optional().or(z.literal("")),
-  city: z.string().trim().max(100).optional().or(z.literal("")),
-  latitude: coordenadaOpcional(90),
-  longitude: coordenadaOpcional(180),
-  bedrooms: z.string().trim().regex(/^\d+$/, "Informe um número inteiro de quartos."),
-  bathrooms: decimalOpcional,
-  area_m2: decimalOpcional,
+  description: textoLongo,
+  address: z.string().trim().max(240),
+  city: z.string().trim().max(120),
+  latitude: numeroOpcional.refine(
+    (value) => value === "" || (Number.isFinite(Number(value)) && Number(value) >= -90 && Number(value) <= 90),
+    "Latitude inválida.",
+  ),
+  longitude: numeroOpcional.refine(
+    (value) => value === "" || (Number.isFinite(Number(value)) && Number(value) >= -180 && Number(value) <= 180),
+    "Longitude inválida.",
+  ),
+  bedrooms: z.string().trim().regex(/^\d+$/, "Quartos inválidos."),
+  bathrooms: z.string().trim().regex(/^\d+(?:[.,]\d)?$/, "Banheiros inválidos."),
+  area_m2: z.string().trim().regex(/^\d+(?:[.,]\d{1,2})?$/, "Área inválida."),
+});
+
+export const imovelImagemSchema = z.object({
+  property_id: z.string().uuid(),
+  image_url: z.string().trim().url("Informe uma URL de imagem válida.").max(2000),
+  alt_text: z.string().trim().max(160),
 });
 
 export const imovelIdSchema = z.string().uuid();
-
-export const imovelImagemSchema = z.object({
-  property_id: imovelIdSchema,
-  image_url: z
-    .string()
-    .trim()
-    .url("Informe uma URL válida.")
-    .max(2048, "A URL da imagem é muito longa.")
-    .refine((value) => /^https?:\/\//i.test(value), "Use uma URL HTTP ou HTTPS."),
-  alt_text: z.string().trim().max(160).optional().or(z.literal("")),
-});
-
-export const imovelImagemIdSchema = z.object({
-  property_id: imovelIdSchema,
-  image_id: imovelIdSchema,
-});
 
 export function precoParaCentavos(value: string): number {
   const normalized = value.trim().replace(",", ".");
@@ -81,8 +66,6 @@ export function precoParaCentavos(value: string): number {
   return Number(inteira) * 100 + Number(decimal.padEnd(2, "0").slice(0, 2));
 }
 
-export function decimalParaNumero(value: string | undefined): number | null {
-  const normalized = value?.trim().replace(",", ".") ?? "";
-  if (!normalized) return null;
-  return Number(normalized);
+export function numeroDecimal(value: string): number {
+  return Number(value.trim().replace(",", "."));
 }
