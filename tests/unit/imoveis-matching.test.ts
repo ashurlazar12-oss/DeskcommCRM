@@ -75,7 +75,7 @@ describe("imoveis matching", () => {
     );
   });
 
-  it("does not invent a match when no structured preferences exist", () => {
+  it("excludes unavailable properties", () => {\n    const result = matchLeadToProperty(\n      { id: "lead-5", title: "Lead", custom_fields: { imoveis_listing_type: "sale" } },\n      { ...property, status: "sold" },\n    );\n\n    expect(result.excluded).toBe(true);\n    expect(result.exclusion_reasons).toContain(\n      "Imóvel não está disponível para recomendação.",\n    );\n  });\n\n  it("does not invent a match when no structured preferences exist", () => {
     const result = matchLeadToProperty(
       { id: "lead-4", title: "Sem perfil", custom_fields: {} },
       property,
