@@ -107,7 +107,7 @@ describe("Imóveis Phase 6 — leads e clientes", () => {
     const dml = `
       insert into public.imoveis_lead_properties
         (organization_id, lead_id, property_id, relationship)
-      values ('${ORG_B}', '${GOV_LEAD}', '${PROPERTY_A}', 'interested')
+      values ('${GOV_ORG}', '${GOV_LEAD}', '${PROPERTY_A}', 'interested')
     `;
     expect(writeCountAs(USER_B, dml)).toBe(0);
   });
