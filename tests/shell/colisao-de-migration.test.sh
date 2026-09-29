@@ -378,24 +378,24 @@ pr_no_principal() { # $1 = número do PR, $2 = nome da migration que a cabeça d
 gate_prs() { # $1 = PRs abertos que o gh falso lista, $2 = clone
   ( export FAKE_GH_PRS="$1"; cd "$2" && bash scripts/checar-colisao-de-migration.sh origin/main 2>&1 )
 }
-pr_no_principal 7 "20260917100000_0276_do_fork.sql"
+pr_no_principal 9007 "20260917100000_0276_do_fork.sql"
 pr_no_principal 9 "20260917120000_0400_abandonado.sql"
 
 echo "16. PR aberto de FORK com o mesmo NNNN: o gate o enxerga e nomeia (não reprova)"
 c="$TMP/c16"; clonar "$c"; git -C "$c" switch -q -c fix/pr
 migrar "$c" "20260917110000_0276_meu.sql"; commit "$c" "PR com o 0276 que o fork também tem"
-if git -C "$c" rev-parse -q --verify refs/pull/7/head >/dev/null 2>&1; then
-  falha "o caso exige clone SEM refs/pull (como o clone real)" "refs/pull/7/head já existe no clone"
+if git -C "$c" rev-parse -q --verify refs/pull/9007/head >/dev/null 2>&1; then
+  falha "o caso exige clone SEM refs/pull (como o clone real)" "refs/pull/9007/head já existe no clone"
 else
   ok "cenário montado: o clone não traz refs/pull, igual ao do GitHub"
 fi
-saida="$(gate_prs "7" "$c")"; code=$?
+saida="$(gate_prs "9007" "$c")"; code=$?
 assert_exit "$code" 0 "número de outro PR não reprova — quem entrar primeiro fica"
 # Âncora no ARQUIVO do PR: o gate velho já emite um ::warning genérico ("não foram
 # medidos"), e "::warning" solto passaria sem ter visto fork nenhum. E "NNNN=0277" aqui
 # também não provaria nada — o próprio PR tem 0276. Quem prova o teto vindo do fork é o 17.
 assert_contains "$saida" "::warning file=supabase/migrations/20260917110000_0276_meu.sql::NNNN=0276" "avisa NO ARQUIVO que colide"
-assert_contains "$saida" "PR aberto #7" "nomeia O PR que tem o mesmo número"
+assert_contains "$saida" "PR aberto #9007" "nomeia O PR que tem o mesmo número"
 
 echo "17. cabeça de PR FECHADO não entra: a população é a lista de ABERTOS, nunca o curinga"
 c="$TMP/c17"; clonar "$c"; git -C "$c" switch -q -c fix/pr
@@ -403,17 +403,17 @@ migrar "$c" "20260917130000_0263_meu.sql"; commit "$c" "PR com número livre"
 # O #9 é FECHADO para o gh falso: ele só aparece se o gate pedir --state all/closed. Assim
 # este caso reprova tanto o curinga refs/pull/* quanto a troca de `--state open`.
 export FAKE_GH_PRS_FECHADOS="9"
-saida="$(gate_prs "7" "$c")"; code=$?
+saida="$(gate_prs "9007" "$c")"; code=$?
 unset FAKE_GH_PRS_FECHADOS
 assert_exit "$code" 0 "PR com número livre passa"
-assert_contains "$saida" "NNNN=0277" "o teto vem do PR ABERTO #7"
+assert_contains "$saida" "NNNN=0277" "o teto vem do PR ABERTO #9007"
 assert_not_contains "$saida" "0401" "o 0400 do PR fechado #9 não empurra o próximo livre"
-assert_not_contains "$saida" "#9" "o PR fechado não aparece em lugar nenhum"
+assert_not_contains "$saida" "PR aberto #9 —" "o PR fechado não aparece em lugar nenhum"
 
 echo "18. PR listado cuja cabeça não pôde ser buscada: NÃO MEDIDO nomeado, e a soma aparece"
 c="$TMP/c18"; clonar "$c"; git -C "$c" switch -q -c fix/pr
 migrar "$c" "20260917140000_0263_meu.sql"; commit "$c" "PR com número livre"
-saida="$(gate_prs "7 8" "$c")"; code=$?
+saida="$(gate_prs "9007 8" "$c")"; code=$?
 assert_exit "$code" 0 "uma cabeça imensurável não reprova o PR (é informação, não ação)"
 assert_contains "$saida" "NÃO MEDIDO: #8" "nomeia QUAL PR ficou de fora"
 assert_contains "$saida" "2 listado(s), 1 medido(s)" "declara a soma: listados contra medidos"
@@ -460,7 +460,7 @@ c="$TMP/c22"; clonar "$c"; git -C "$c" switch -q -c fix/pr
 migrar "$c" "20260917190000_0263_meu.sql"; commit "$c" "PR com número livre"
 git -C "$c" fetch -q origin "+refs/pull/9/head:refs/colisao-pr/$$/9"
 git -C "$c" fetch -q origin "+refs/pull/9/head:refs/colisao-pr/$morto/9"
-saida="$(gate_prs "7" "$c")"; code=$?
+saida="$(gate_prs "9007" "$c")"; code=$?
 assert_exit "$code" 0 "PR com número livre passa"
 assert_not_contains "$saida" "0401" "a cabeça de OUTRA rodada (viva ou morta) não entra na população"
 if git -C "$c" rev-parse -q --verify "refs/colisao-pr/$$/9" >/dev/null 2>&1; then
@@ -481,17 +481,17 @@ echo "23. dois conjuntos para duas funções: a main é MEMBRO da população, e
 echo "    ACRESCENTA a ela é DELE — herdar o número da main não faz um PR ser 'quem tem'"
 # Toda cabeça de PR carrega as migrations da main que herdou. Atribuir pelo conjunto inteiro
 # nomearia, numa colisão com a main, todo PR aberto que já trouxe a main — como se o número
-# fosse deles. O #7 aqui só herdou o 0262 (e acrescentou o 0276).
+# fosse deles. O #9007 aqui só herdou o 0262 (e acrescentou o 0276).
 c="$TMP/c23"; clonar "$c"; git -C "$c" switch -q -c fix/colide-com-a-main
 migrar "$c" "20260917200000_0262_colide.sql"; commit "$c" "PR com o 0262 que a main já tem"
-saida="$(gate_prs "7" "$c")"; code=$?
+saida="$(gate_prs "9007" "$c")"; code=$?
 assert_exit "$code" 1 "colisão com a MAIN continua reprovando"
 assert_contains "$saida" "NNNN=0262 já existe em 'origin/main'" "e acusa a main, que é quem tem"
-# A asserção mira a LINHA da atribuição, não o nome do PR: "PR aberto #7" solto também casa com
-# o ::notice legítimo do teto (o #7 ACRESCENTA o 0276) — e foi por ele que a primeira versão
+# A asserção mira a LINHA da atribuição, não o nome do PR: "PR aberto #9007" solto também casa com
+# o ::notice legítimo do teto (o #9007 ACRESCENTA o 0276) — e foi por ele que a primeira versão
 # desta asserção ficou vermelha, pelo motivo errado.
 assert_not_contains "$saida" "NNNN=0262 também está em" "o PR que só HERDOU o 0262 da main não é nomeado"
-assert_contains "$saida" "(o teto medido) existe em: PR aberto #7" "o que o #7 ACRESCENTOU (0276) segue atribuído a ele"
+assert_contains "$saida" "(o teto medido) existe em: PR aberto #9007" "o que o #9007 ACRESCENTOU (0276) segue atribuído a ele"
 assert_contains "$saida" "NNNN=0277" "e segue empurrando o próximo livre (a main e os PRs como população)"
 
 echo "24. zero PRs abertos é MEDIÇÃO (0 listado), não falha"
@@ -505,7 +505,7 @@ assert_not_contains "$saida" "NÃO MEDIDO: PRs abertos" "lista vazia não é gh 
 echo "25. gh que sai 0 SEM número nenhum é NÃO MEDIDO — não 'zero PRs'"
 c="$TMP/c25"; clonar "$c"; git -C "$c" switch -q -c fix/pr
 migrar "$c" "20260917201000_0263_meu.sql"; commit "$c" "PR com número livre"
-export FAKE_GH_SEM_NUMERO=1; saida="$(gate_prs "7" "$c")"; code=$?; unset FAKE_GH_SEM_NUMERO
+export FAKE_GH_SEM_NUMERO=1; saida="$(gate_prs "9007" "$c")"; code=$?; unset FAKE_GH_SEM_NUMERO
 assert_exit "$code" 0 "a resposta estranha do gh não reprova o PR"
 assert_contains "$saida" "NÃO MEDIDO: PRs abertos" "saída sem número vira NÃO MEDIDO"
 assert_not_contains "$saida" "0 listado(s)" "e não é apresentada como 'zero PRs'"
@@ -529,10 +529,10 @@ git -C "$c" config "url.$fork_repo.insteadOf" "https://github.com/contrib/Deskco
 git -C "$c" config "url.$principal.insteadOf" "https://github.com/up/DeskcommCRM.git"
 mkdir -p "$c/scripts"; cp "$GATE_ORIGEM" "$c/scripts/checar-colisao-de-migration.sh"
 git -C "$c" switch -q -c fix/pr
-migrar "$c" "20260917220000_0276_meu.sql"; commit "$c" "PR com o 0276 que o #7 do pai também tem"
-export FAKE_GH_PAI="up/DeskcommCRM"; saida="$(gate_prs "7" "$c")"; code=$?; unset FAKE_GH_PAI
+migrar "$c" "20260917220000_0276_meu.sql"; commit "$c" "PR com o 0276 que o #9007 do pai também tem"
+export FAKE_GH_PAI="up/DeskcommCRM"; saida="$(gate_prs "9007" "$c")"; code=$?; unset FAKE_GH_PAI
 assert_exit "$code" 0 "número de PR aberto do pai não reprova"
-assert_contains "$saida" "PR aberto #7" "enxerga o PR do repositório PAI"
+assert_contains "$saida" "PR aberto #9007" "enxerga o PR do repositório PAI"
 assert_contains "$saida" "em up/DeskcommCRM" "declara QUAL repositório consultou"
 assert_not_contains "$saida" "0 listado(s)" "não consulta o fork e chama o zero de medição"
 
@@ -570,7 +570,7 @@ echo "29. cópia de PR em refs/remotes/*/pr/N (fetch de triagem) não traz fanta
 c="$TMP/c29"; clonar "$c"; git -C "$c" switch -q -c fix/pr
 migrar "$c" "20260917233000_0263_meu.sql"; commit "$c" "PR com número livre"
 git -C "$c" fetch -q origin "+refs/pull/9/head:refs/remotes/origin/pr/9"
-saida="$(gate_prs "7" "$c")"; code=$?
+saida="$(gate_prs "9007" "$c")"; code=$?
 assert_exit "$code" 0 "PR com número livre passa"
 assert_not_contains "$saida" "0401" "o 0400 do #9 fechado não volta pela cópia de triagem"
 assert_contains "$saida" "NNNN=0277" "o teto segue vindo só dos PRs abertos"
