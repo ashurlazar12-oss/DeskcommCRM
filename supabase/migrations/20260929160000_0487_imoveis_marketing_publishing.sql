@@ -1,7 +1,14 @@
 -- Phase 5 — AI marketing + Meta social publishing for the optional Imóveis module.
 
 -- Preserve the Phase 4 provisioner and wrap it so installs/re-applies also provision Phase 5.
-alter function public.fn_imoveis_provisionar() rename to fn_imoveis_provisionar_phase4;
+do $rename$
+begin
+  if to_regprocedure('public.fn_imoveis_provisionar_phase4()') is null
+     and to_regprocedure('public.fn_imoveis_provisionar()') is not null then
+    alter function public.fn_imoveis_provisionar() rename to fn_imoveis_provisionar_phase4;
+  end if;
+end;
+$rename$;
 
 create or replace function public.fn_imoveis_provisionar()
 returns void
@@ -189,3 +196,4 @@ $do$;
 
 do $f$ begin perform public.fn_reaplicar_modulos_instalados(); end $f$;
 do $f$ begin perform public.fn_conferir_modulos_instalados(); end $f$;
+notify pgrst, 'reload schema';
