@@ -21,6 +21,7 @@ export default async function Page() {
   const { data, error } = await supabase
     .from("imoveis_properties")
     .select("id, organization_id, property_code, status, price_cents, currency, created_at, updated_at")
+    .eq("organization_id", org.orgId)
     .order("created_at", { ascending: false })
     .limit(200);
 
