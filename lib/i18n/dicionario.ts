@@ -13379,7 +13379,6 @@ export const DICIONARIO: Traducoes = {
   },
   "Nenhuma propriedade cadastrada ainda.": { es: "Aún no hay propiedades registradas." },
   "Todos": { es: "Todos" },
-  "Limpar": { es: "Limpiar" },
   "Nenhum resultado encontrado.": { es: "No se encontraron resultados." },
 
   "O agente consulta o banco de outro sistema da empresa, como um ERP ou outro CRM.": { es: "El agente consulta la base de datos de otro sistema de la empresa, como un ERP u otro CRM." },
