@@ -129,8 +129,9 @@ export async function readMarketingInitialData(
   organizationId: string,
 ): Promise<MarketingInitialData> {
   const supabase = await createMarketingClient();
+  const admin = createAdminClient() as unknown as SupabaseClient<MarketingDatabase>;
   const [accounts, assets, jobs] = await Promise.all([
-    supabase.from("imoveis_social_accounts")
+    admin.from("imoveis_social_accounts")
       .select("id, organization_id, platform, account_name, external_account_id, access_token_last4, status, created_at, updated_at")
       .eq("organization_id", organizationId)
       .order("platform", { ascending: true })
