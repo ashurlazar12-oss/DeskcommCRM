@@ -1,5 +1,8 @@
-const META_GRAPH_VERSION = "v26.0";
-const GRAPH_BASE = `https://graph.facebook.com/${META_GRAPH_VERSION}`;
+import { graphBaseUrl } from "@/lib/channels/meta/graph-base";
+
+function graphBase(): string {
+  return graphBaseUrl();
+}
 
 export class PermanentMetaError extends Error {
   constructor(message: string) {
@@ -11,7 +14,7 @@ export class PermanentMetaError extends Error {
 type MetaResponse = Record<string, unknown>;
 
 async function metaRequest(path: string, token: string, options: RequestInit = {}): Promise<MetaResponse> {
-  const response = await fetch(`${GRAPH_BASE}/${path.replace(/^\//, "")}`, {
+  const response = await fetch(`${graphBase()}/${path.replace(/^\//, "")}`, {
     ...options,
     headers: {
       Authorization: `Bearer ${token}`,
