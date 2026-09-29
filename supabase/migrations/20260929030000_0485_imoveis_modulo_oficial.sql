@@ -98,9 +98,12 @@ begin
       )
     );
 
-  -- RLS já está ligada, então fn_proteger_modulo_provisionado() não deve
-  -- atropelar estas policies por operação. Ela continua sendo chamada para
-  -- manter a mesma proteção de suporte da ADR-0002 onde aplicável.
+  -- O baseline dá GRANT ALL em TABLES a anon; revogar aqui é obrigatório porque
+  -- esta tabela nasce dinamicamente na instalação do módulo.
+  revoke all on public.imoveis_properties from anon;
+
+  -- RLS já está ligada por nós, então esta rotina não mexe na policy ampla;
+  -- ela continua aplicando as travas de suporte da ADR-0002.
   perform public.fn_proteger_modulo_provisionado();
 
   comment on table public.imoveis_properties is
