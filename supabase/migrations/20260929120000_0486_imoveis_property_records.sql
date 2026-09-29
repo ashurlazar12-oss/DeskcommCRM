@@ -58,6 +58,85 @@ begin
   create index if not exists imoveis_property_images_property_idx
     on public.imoveis_property_images (organization_id, property_id, sort_order);
 
+  -- Keep property/image tenancy coupled at the database boundary as well as in the server action.
+  create unique index if not exists imoveis_properties_org_id_uid
+    on public.imoveis_properties (organization_id, id);
+
+  do $constraints$
+  begin
+    if not exists (
+      select 1 from pg_constraint
+       where conrelid = 'public.imoveis_properties'::regclass
+         and conname = 'imoveis_properties_property_type_check'
+    ) then
+      alter table public.imoveis_properties
+        add constraint imoveis_properties_property_type_check
+        check (property_type in ('house','apartment','land','commercial','commercial_room','warehouse','other'));
+    end if;
+
+    if not exists (
+      select 1 from pg_constraint
+       where conrelid = 'public.imoveis_properties'::regclass
+         and conname = 'imoveis_properties_listing_type_check'
+    ) then
+      alter table public.imoveis_properties
+        add constraint imoveis_properties_listing_type_check
+        check (listing_type in ('sale','rent'));
+    end if;
+
+    if not exists (
+      select 1 from pg_constraint
+       where conrelid = 'public.imoveis_properties'::regclass
+         and conname = 'imoveis_properties_bedrooms_check'
+    ) then
+      alter table public.imoveis_properties
+        add constraint imoveis_properties_bedrooms_check
+        check (bedrooms >= 0);
+    end if;
+
+    if not exists (
+      select 1 from pg_constraint
+       where conrelid = 'public.imoveis_properties'::regclass
+         and conname = 'imoveis_properties_latitude_check'
+    ) then
+      alter table public.imoveis_properties
+        add constraint imoveis_properties_latitude_check
+        check (latitude is null or latitude between -90 and 90);
+    end if;
+
+    if not exists (
+      select 1 from pg_constraint
+       where conrelid = 'public.imoveis_properties'::regclass
+         and conname = 'imoveis_properties_longitude_check'
+    ) then
+      alter table public.imoveis_properties
+        add constraint imoveis_properties_longitude_check
+        check (longitude is null or longitude between -180 and 180);
+    end if;
+
+    if not exists (
+      select 1 from pg_constraint
+       where conrelid = 'public.imoveis_property_images'::regclass
+         and conname = 'imoveis_property_images_org_property_fk'
+    ) then
+      alter table public.imoveis_property_images
+        add constraint imoveis_property_images_org_property_fk
+        foreign key (organization_id, property_id)
+        references public.imoveis_properties (organization_id, id)
+        on delete cascade;
+    end if;
+
+    if not exists (
+      select 1 from pg_constraint
+       where conrelid = 'public.imoveis_property_images'::regclass
+         and conname = 'imoveis_property_images_url_check'
+    ) then
+      alter table public.imoveis_property_images
+        add constraint imoveis_property_images_url_check
+        check (image_url ~* '^https?://');
+    end if;
+  end $constraints$;
+
   alter table public.imoveis_properties enable row level security;
   alter table public.imoveis_property_images enable row level security;
 
