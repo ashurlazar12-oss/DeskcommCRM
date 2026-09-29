@@ -119,6 +119,9 @@ $do$;
 
 do $f$ begin perform public.fn_reaplicar_modulos_instalados(); end $f$;
 
+create unique index if not exists crm_leads_org_id_uid
+  on public.crm_leads (organization_id, id);
+
 do $constraints$
 begin
   if to_regclass('public.imoveis_lead_properties') is null then
