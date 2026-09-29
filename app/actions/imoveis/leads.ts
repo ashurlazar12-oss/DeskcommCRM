@@ -12,6 +12,8 @@ import {
   type ImoveisLeadRelationship,
 } from "@/lib/imoveis/leads";
 import { createClient } from "@/lib/supabase/server";
+import { createImoveisClient } from "@/lib/imoveis/server";
+import { createImoveisLeadsClient } from "@/lib/imoveis/leads";
 
 export type ImoveisLeadActionResult =
   | { ok: true; message: string }
@@ -78,16 +80,18 @@ export async function vincularLeadAImovel(
   });
   if (!parsed.success) return { ok: false, error: "Dados do vínculo inválidos." };
 
-  const supabase = await createClient();
+  const imoveis = await createImoveisClient();
+  const crm = await createClient();
+  const links = await createImoveisLeadsClient();
 
   const [{ data: property }, { data: lead }] = await Promise.all([
-    supabase
+    imoveis
       .from("imoveis_properties")
       .select("id")
       .eq("id", parsed.data.property_id)
       .eq("organization_id", ctx.org.orgId)
       .maybeSingle(),
-    supabase
+    crm
       .from("crm_leads")
       .select("id, contact_id")
       .eq("id", parsed.data.lead_id)
@@ -99,7 +103,7 @@ export async function vincularLeadAImovel(
     return { ok: false, error: "Propriedade ou lead não encontrado." };
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await links
     .from("imoveis_lead_properties")
     .insert({
       organization_id: ctx.org.orgId,
