@@ -127,15 +127,18 @@ export async function createMarketingClient(): Promise<SupabaseClient<MarketingD
 export async function readMarketingInitialData(
   propertyId: string,
   organizationId: string,
+  canManageSocialAccounts = false,
 ): Promise<MarketingInitialData> {
   const supabase = await createMarketingClient();
   const admin = createAdminClient() as unknown as SupabaseClient<MarketingDatabase>;
   const [accounts, assets, jobs] = await Promise.all([
-    admin.from("imoveis_social_accounts")
-      .select("id, organization_id, platform, account_name, external_account_id, access_token_last4, status, created_at, updated_at")
-      .eq("organization_id", organizationId)
-      .order("platform", { ascending: true })
-      .order("account_name", { ascending: true }),
+    canManageSocialAccounts
+      ? admin.from("imoveis_social_accounts")
+          .select("id, organization_id, platform, account_name, external_account_id, access_token_last4, status, created_at, updated_at")
+          .eq("organization_id", organizationId)
+          .order("platform", { ascending: true })
+          .order("account_name", { ascending: true })
+      : Promise.resolve({ data: [], error: null }),
     supabase.from("imoveis_marketing_assets")
       .select("id, organization_id, property_id, platform, language, revision, headline, caption, hashtags, cta, alt_text, status, generated_by_ai, approved_at, published_at, created_at, updated_at")
       .eq("property_id", propertyId)
