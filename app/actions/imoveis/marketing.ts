@@ -95,7 +95,7 @@ export async function montarPromptMarketing(input: {
   platform: ImoveisSocialPlatform;
   property: Record<string, unknown>;
   imageCount: number;
-}): string {
+}): Promise<string> {
   const languageName = input.language === "es" ? "espanhol" : "português do Brasil";
   return [
     "Crie uma peça imobiliária pronta para publicação.",
