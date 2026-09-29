@@ -20,8 +20,8 @@ describe("Imóveis marketing", () => {
     expect(marketingBackoffMinutes(8)).toBe(60);
   });
 
-  it("proíbe invenção de fatos no prompt", () => {
-    const prompt = montarPromptMarketing({
+  it("proíbe invenção de fatos no prompt", async () => {
+    const prompt = await montarPromptMarketing({
       language: "pt-BR",
       platform: "instagram",
       imageCount: 3,
