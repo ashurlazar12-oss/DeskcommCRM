@@ -173,9 +173,9 @@ export function MarketingPanel({
               <option value="instagram">{t("Instagram")}</option>
               <option value="facebook">{t("Facebook")}</option>
             </select>
-            <input name="account_name" value={accountName} onChange={(event) => setAccountName(event.target.value)} placeholder={t("Nome da conta")} required className="h-9 w-full rounded-xs border border-border bg-surface-elevated px-3 text-sm text-text" />
+            <input name="account_name" value={accountName} onChange={(event) => setAccountName(event.target.value)} placeholder={t("Nome da conta social")} required className="h-9 w-full rounded-xs border border-border bg-surface-elevated px-3 text-sm text-text" />
             <input name="external_account_id" value={externalAccountId} onChange={(event) => setExternalAccountId(event.target.value)} placeholder={t("ID da conta / Página")} required className="h-9 w-full rounded-xs border border-border bg-surface-elevated px-3 text-sm text-text" />
-            <input name="access_token" value={accessToken} onChange={(event) => setAccessToken(event.target.value)} placeholder={t("Token de acesso")} type="password" autoComplete="off" required className="h-9 w-full rounded-xs border border-border bg-surface-elevated px-3 text-sm text-text" />
+            <input name="access_token" value={accessToken} onChange={(event) => setAccessToken(event.target.value)} placeholder={t("Token de acesso social")} type="password" autoComplete="off" required className="h-9 w-full rounded-xs border border-border bg-surface-elevated px-3 text-sm text-text" />
             <Button type="submit" disabled={pending}>
               {pending ? t("Processando…") : t("Conectar")}
             </Button>
