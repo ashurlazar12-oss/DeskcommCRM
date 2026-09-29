@@ -1,7 +1,3 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-
-import { createClient } from "@/lib/supabase/server";
-
 export const IMOVEIS_LEAD_RELATIONSHIPS = ["interested", "presented", "rejected"] as const;
 export type ImoveisLeadRelationship = (typeof IMOVEIS_LEAD_RELATIONSHIPS)[number];
 
@@ -44,10 +40,6 @@ export type ImoveisLeadsDatabase = {
     CompositeTypes: Record<string, never>;
   };
 };
-
-export async function createImoveisLeadsClient(): Promise<SupabaseClient<ImoveisLeadsDatabase>> {
-  return (await createClient()) as unknown as SupabaseClient<ImoveisLeadsDatabase>;
-}
 
 export function relationshipLabel(
   relationship: ImoveisLeadRelationship,
