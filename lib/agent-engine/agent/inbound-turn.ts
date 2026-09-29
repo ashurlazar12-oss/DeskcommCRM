@@ -144,6 +144,7 @@ import {
   catalogoEntregueAoOperador,
 } from './entrega-de-capacidade';
 import { composeSystemPrompt, loadOrgMemory, renderOrgMemory } from './org-memory';
+import { applyImoveisPreferences, findImoveisMatches } from '@/lib/imoveis/agent';
 import { matchesHandoffKeyword, type PublishedAgentConfig } from './agent-config';
 import { garantirPerguntaDoRoteiro, prepararRoteiroDoTurno } from './roteiro-no-turno';
 import { validarRespostaDoFluxo } from './flow-validate';
@@ -239,6 +240,88 @@ export const AGENT_TOOL_DEFS = {
             'as fotos dele vão junto, e o texto vira a legenda da primeira',
         ),
     }),
+  },
+  update_imoveis_preferences: {
+    description:
+      'Registra as preferências imobiliárias que o lead declarou nesta conversa. Use somente fatos que o lead realmente informou; não invente orçamento, cidade, tipo, quartos, banheiros ou área. ' +
+      'As preferências ficam estruturadas no cadastro do lead e podem ser atualizadas ou limpas com null. Use esta tool depois de perguntas de qualificação imobiliária.',
+    inputSchema: z
+      .object({
+        listing_type: z
+          .enum(['sale', 'rent'])
+          .nullable()
+          .optional()
+          .describe('compra ou aluguel, somente se o lead informou'),
+        property_type: z
+          .enum(['house', 'apartment', 'land', 'commercial', 'commercial_room', 'warehouse', 'other'])
+          .nullable()
+          .optional()
+          .describe('tipo de imóvel, somente se o lead informou'),
+        min_price_cents: z
+          .number()
+          .int()
+          .min(0)
+          .nullable()
+          .optional()
+          .describe('menor preço aceitável, em centavos da moeda do cadastro'),
+        max_price_cents: z
+          .number()
+          .int()
+          .min(0)
+          .nullable()
+          .optional()
+          .describe('maior preço aceitável, em centavos da moeda do cadastro'),
+        min_bedrooms: z
+          .number()
+          .int()
+          .min(0)
+          .nullable()
+          .optional()
+          .describe('mínimo de quartos'),
+        max_bedrooms: z
+          .number()
+          .int()
+          .min(0)
+          .nullable()
+          .optional()
+          .describe('máximo de quartos'),
+        min_bathrooms: z
+          .number()
+          .min(0)
+          .nullable()
+          .optional()
+          .describe('mínimo de banheiros'),
+        min_area_m2: z
+          .number()
+          .min(0)
+          .nullable()
+          .optional()
+          .describe('área mínima em metros quadrados'),
+        city: z
+          .string()
+          .min(1)
+          .max(100)
+          .nullable()
+          .optional()
+          .describe('cidade preferida, somente se o lead informou'),
+        cities: z
+          .array(z.string().min(1).max(100))
+          .max(10)
+          .nullable()
+          .optional()
+          .describe('lista de cidades aceitas pelo lead'),
+      })
+      .passthrough(),
+  },
+  find_matching_properties: {
+    description:
+      'Procura imóveis disponíveis nesta organização que atendam às preferências imobiliárias estruturadas deste lead. ' +
+      'Use depois de salvar as preferências. O resultado é determinístico e explica por que cada imóvel combinou; não invente dados ausentes.',
+    inputSchema: z
+      .object({
+        limit: z.number().int().min(1).max(20).optional().describe('quantos imóveis retornar, no máximo 20'),
+      })
+      .passthrough(),
   },
   update_lead_state: {
     description:
@@ -3343,6 +3426,55 @@ async function executarTurnoDoAgente(
             error: {
               code: 'internal_error',
               message: 'erro interno no envio — encerre o turno agora.',
+            },
+          };
+        }
+      },
+    }),
+    update_imoveis_preferences: tool({
+      ...AGENT_TOOL_DEFS.update_imoveis_preferences,
+      execute: async (raw) => {
+        try {
+          return await applyImoveisPreferences(
+            pool,
+            {
+              tenantId,
+              leadId,
+              jobId: liveJob().id,
+              agentId: agentConfig?.agentId ?? null,
+            },
+            raw,
+          );
+        } catch (err) {
+          noteRunError(err instanceof Error ? err : new Error(String(err)));
+          return {
+            ok: false,
+            error: {
+              code: 'internal_error',
+              message:
+                'erro interno ao atualizar preferências imobiliárias — encerre o turno agora.',
+            },
+          };
+        }
+      },
+    }),
+    find_matching_properties: tool({
+      ...AGENT_TOOL_DEFS.find_matching_properties,
+      execute: async ({ limit }) => {
+        try {
+          return await findImoveisMatches(
+            pool,
+            { tenantId, leadId },
+            limit,
+          );
+        } catch (err) {
+          noteRunError(err instanceof Error ? err : new Error(String(err)));
+          return {
+            ok: false,
+            error: {
+              code: 'internal_error',
+              message:
+                'erro interno ao procurar imóveis — não faça recomendações com dados antigos.',
             },
           };
         }
