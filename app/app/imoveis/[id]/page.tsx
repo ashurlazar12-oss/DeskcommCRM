@@ -47,6 +47,10 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     .eq("organization_id", org.orgId)
     .order("sort_order", { ascending: true });
 
+  if (imagesError && !tabelaNaoInstalada(imagesError)) {
+    throw new Error(imagesError.message);
+  }
+
   const initialImages = imagesError && tabelaNaoInstalada(imagesError)
     ? []
     : ((images ?? []) as ImovelImagemRow[]);
