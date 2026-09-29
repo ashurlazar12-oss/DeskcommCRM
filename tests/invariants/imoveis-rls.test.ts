@@ -145,6 +145,16 @@ describe("Imóveis — isolamento da galeria de imagens", () => {
     ).toBe(0);
   });
 
+  it("não permite vincular uma imagem da organização B a uma propriedade de A", () => {
+    expect(
+      writeCountAs(USER_B, `
+        insert into public.imoveis_property_images
+          (organization_id, property_id, image_url, alt_text, sort_order)
+          values ('${ORG_B}', '${PROPERTY_A}', 'https://example.com/cross-org.jpg', 'cross-org', 3)
+      `),
+    ).toBe(0);
+  });
+
   it("manager de B não apaga imagem de A; agent pode apagar imagem própria", () => {
     expect(
       writeCountAs(USER_B, `delete from public.imoveis_property_images where id = '${IMAGE_A}'`),
