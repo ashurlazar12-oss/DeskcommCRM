@@ -26,8 +26,8 @@ begin
   create table if not exists public.imoveis_lead_properties (
     id uuid primary key default gen_random_uuid(),
     organization_id uuid not null references public.organizations(id) on delete cascade,
-    lead_id uuid not null references public.crm_leads(id) on delete cascade,
-    property_id uuid not null references public.imoveis_properties(id) on delete cascade,
+    lead_id uuid not null,
+    property_id uuid not null,
     relationship text not null default 'interested'
       check (relationship in ('interested', 'presented', 'rejected')),
     notes text not null default '',
@@ -45,40 +45,6 @@ begin
 
   create index if not exists imoveis_lead_properties_property_idx
     on public.imoveis_lead_properties (organization_id, property_id, updated_at desc);
-
-  -- Tenant-safe composite foreign keys prevent a relationship from crossing
-  -- organizations even when an application writer supplies a valid UUID from elsewhere.
-  do $constraints$
-  begin
-    alter table public.imoveis_lead_properties
-      drop constraint if exists imoveis_lead_properties_lead_id_fkey;
-    alter table public.imoveis_lead_properties
-      drop constraint if exists imoveis_lead_properties_property_id_fkey;
-
-    if not exists (
-      select 1 from pg_constraint
-       where conrelid = 'public.imoveis_lead_properties'::regclass
-         and conname = 'imoveis_lead_properties_org_lead_fk'
-    ) then
-      alter table public.imoveis_lead_properties
-        add constraint imoveis_lead_properties_org_lead_fk
-        foreign key (organization_id, lead_id)
-        references public.crm_leads (organization_id, id)
-        on delete cascade;
-    end if;
-
-    if not exists (
-      select 1 from pg_constraint
-       where conrelid = 'public.imoveis_lead_properties'::regclass
-         and conname = 'imoveis_lead_properties_org_property_fk'
-    ) then
-      alter table public.imoveis_lead_properties
-        add constraint imoveis_lead_properties_org_property_fk
-        foreign key (organization_id, property_id)
-        references public.imoveis_properties (organization_id, id)
-        on delete cascade;
-    end if;
-  end $constraints$;
 
   alter table public.imoveis_lead_properties enable row level security;
 
@@ -140,6 +106,37 @@ begin
   perform public.fn_proteger_modulo_provisionado();
 end;
 $f$;
+do $constraints$
+begin
+  alter table public.imoveis_lead_properties
+    drop constraint if exists imoveis_lead_properties_lead_id_fkey;
+  alter table public.imoveis_lead_properties
+    drop constraint if exists imoveis_lead_properties_property_id_fkey;
+
+  if not exists (
+    select 1 from pg_constraint
+     where conrelid = 'public.imoveis_lead_properties'::regclass
+       and conname = 'imoveis_lead_properties_org_lead_fk'
+  ) then
+    alter table public.imoveis_lead_properties
+      add constraint imoveis_lead_properties_org_lead_fk
+      foreign key (organization_id, lead_id)
+      references public.crm_leads (organization_id, id)
+      on delete cascade;
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+     where conrelid = 'public.imoveis_lead_properties'::regclass
+       and conname = 'imoveis_lead_properties_org_property_fk'
+  ) then
+    alter table public.imoveis_lead_properties
+      add constraint imoveis_lead_properties_org_property_fk
+      foreign key (organization_id, property_id)
+      references public.imoveis_properties (organization_id, id)
+      on delete cascade;
+  end if;
+end $constraints$;
 
 revoke execute on function public.fn_imoveis_provisionar() from public, anon, authenticated;
 grant execute on function public.fn_imoveis_provisionar() to service_role;
