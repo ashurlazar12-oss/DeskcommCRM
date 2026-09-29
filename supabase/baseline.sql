@@ -42695,21 +42695,7 @@ $$;
 revoke all on function public.fn_lgpd_cascade_redact_contact(uuid,uuid,uuid) from public, anon, authenticated;
 grant execute on function public.fn_lgpd_cascade_redact_contact(uuid,uuid,uuid) to service_role;
 
--- ---- 0485 — módulo Imóveis ----
--- 0485 — Imóveis: primeiro corte do módulo imobiliário via ADR-0002.
---
--- O módulo é de INSTALAÇÃO: esta migration cria somente a provisionadora.
--- As tabelas só nascem quando um administrador instala "imoveis" por
--- fn_modulo_instalar(). Quem não instala o módulo não recebe o schema.
---
--- Primeira superfície deliberadamente pequena:
---   - uma tabela de propriedades;
---   - isolamento por organização;
---   - escrita por agent+ e exclusão por manager+;
---   - preço e moeda genéricos (a camada de moedas/UX será tratada depois).
---
--- Não há UI, mídia, IA, leads, matching, publicação ou analytics nesta etapa.
-
+-- ---- Imóveis: evolução do provisionador (migration 0486) ----
 create or replace function public.fn_imoveis_provisionar()
 returns void
 language plpgsql
@@ -42720,98 +42706,375 @@ begin
   create table if not exists public.imoveis_properties (
     id uuid primary key default gen_random_uuid(),
     organization_id uuid not null references public.organizations(id) on delete cascade,
-
-    property_code text not null
-      default ('PROP-' || upper(substr(gen_random_uuid()::text, 1, 8))),
-
-    status text not null default 'draft'
-      check (status in ('draft', 'available', 'reserved', 'sold', 'rented', 'archived')),
-
+    property_code text not null default ('PROP-' || upper(substr(gen_random_uuid()::text, 1, 8))),
+    status text not null default 'draft' check (status in ('draft','available','reserved','sold','rented','archived')),
     price_cents bigint not null check (price_cents >= 0),
-    currency text not null default 'USD'
-      check (currency ~ '^[A-Z]{3}$'),
-
+    currency text not null default 'USD' check (currency ~ '^[A-Z]{3}$'),
+    title text not null default '',
+    property_type text not null default 'other',
+    listing_type text not null default 'sale',
+    description text not null default '',
+    address text not null default '',
+    city text not null default '',
+    latitude numeric(9,6),
+    longitude numeric(9,6),
+    bedrooms integer not null default 0 check (bedrooms >= 0),
+    bathrooms numeric(4,1) not null default 0 check (bathrooms >= 0),
+    area_m2 numeric(12,2) not null default 0 check (area_m2 >= 0),
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now(),
-
-    constraint imoveis_properties_org_code_uid
-      unique (organization_id, property_code)
+    constraint imoveis_properties_org_code_uid unique (organization_id, property_code)
   );
 
-  create index if not exists imoveis_properties_org_idx
-    on public.imoveis_properties (organization_id);
+  alter table public.imoveis_properties add column if not exists title text not null default '';
+  alter table public.imoveis_properties add column if not exists property_type text not null default 'other';
+  alter table public.imoveis_properties add column if not exists listing_type text not null default 'sale';
+  alter table public.imoveis_properties add column if not exists description text not null default '';
+  alter table public.imoveis_properties add column if not exists address text not null default '';
+  alter table public.imoveis_properties add column if not exists city text not null default '';
+  alter table public.imoveis_properties add column if not exists latitude numeric(9,6);
+  alter table public.imoveis_properties add column if not exists longitude numeric(9,6);
+  alter table public.imoveis_properties add column if not exists bedrooms integer not null default 0;
+  alter table public.imoveis_properties add column if not exists bathrooms numeric(4,1) not null default 0;
+  alter table public.imoveis_properties add column if not exists area_m2 numeric(12,2) not null default 0;
 
-  create index if not exists imoveis_properties_status_idx
-    on public.imoveis_properties (organization_id, status);
+  create index if not exists imoveis_properties_org_idx on public.imoveis_properties (organization_id);
+  create index if not exists imoveis_properties_status_idx on public.imoveis_properties (organization_id, status);
+  create index if not exists imoveis_properties_price_idx on public.imoveis_properties (organization_id, currency, price_cents);
 
-  create index if not exists imoveis_properties_price_idx
-    on public.imoveis_properties (organization_id, currency, price_cents);
+  create table if not exists public.imoveis_property_images (
+    id uuid primary key default gen_random_uuid(),
+    organization_id uuid not null references public.organizations(id) on delete cascade,
+    property_id uuid not null references public.imoveis_properties(id) on delete cascade,
+    image_url text not null,
+    alt_text text not null default '',
+    sort_order integer not null default 0 check (sort_order >= 0),
+    created_at timestamptz not null default now()
+  );
+
+  create index if not exists imoveis_property_images_property_idx
+    on public.imoveis_property_images (organization_id, property_id, sort_order);
+
+  -- Remove the initial single-column FK so the tenant-scoped composite FK is authoritative.
+  alter table public.imoveis_property_images
+    drop constraint if exists imoveis_property_images_property_id_fkey;
+
+  -- Keep property/image tenancy coupled at the database boundary as well as in the server action.
+  create unique index if not exists imoveis_properties_org_id_uid
+    on public.imoveis_properties (organization_id, id);
+
+  do $constraints$
+  begin
+    if not exists (
+      select 1 from pg_constraint
+       where conrelid = 'public.imoveis_properties'::regclass
+         and conname = 'imoveis_properties_property_type_check'
+    ) then
+      alter table public.imoveis_properties
+        add constraint imoveis_properties_property_type_check
+        check (property_type in ('house','apartment','land','commercial','commercial_room','warehouse','other'));
+    end if;
+
+    if not exists (
+      select 1 from pg_constraint
+       where conrelid = 'public.imoveis_properties'::regclass
+         and conname = 'imoveis_properties_listing_type_check'
+    ) then
+      alter table public.imoveis_properties
+        add constraint imoveis_properties_listing_type_check
+        check (listing_type in ('sale','rent'));
+    end if;
+
+    if not exists (
+      select 1 from pg_constraint
+       where conrelid = 'public.imoveis_properties'::regclass
+         and conname = 'imoveis_properties_bedrooms_check'
+    ) then
+      alter table public.imoveis_properties
+        add constraint imoveis_properties_bedrooms_check
+        check (bedrooms >= 0);
+    end if;
+
+    if not exists (
+      select 1 from pg_constraint
+       where conrelid = 'public.imoveis_properties'::regclass
+         and conname = 'imoveis_properties_latitude_check'
+    ) then
+      alter table public.imoveis_properties
+        add constraint imoveis_properties_latitude_check
+        check (latitude is null or latitude between -90 and 90);
+    end if;
+
+    if not exists (
+      select 1 from pg_constraint
+       where conrelid = 'public.imoveis_properties'::regclass
+         and conname = 'imoveis_properties_longitude_check'
+    ) then
+      alter table public.imoveis_properties
+        add constraint imoveis_properties_longitude_check
+        check (longitude is null or longitude between -180 and 180);
+    end if;
+
+    if not exists (
+      select 1 from pg_constraint
+       where conrelid = 'public.imoveis_property_images'::regclass
+         and conname = 'imoveis_property_images_org_property_fk'
+    ) then
+      alter table public.imoveis_property_images
+        add constraint imoveis_property_images_org_property_fk
+        foreign key (organization_id, property_id)
+        references public.imoveis_properties (organization_id, id)
+        on delete cascade;
+    end if;
+
+    if not exists (
+      select 1 from pg_constraint
+       where conrelid = 'public.imoveis_property_images'::regclass
+         and conname = 'imoveis_property_images_url_check'
+    ) then
+      alter table public.imoveis_property_images
+        add constraint imoveis_property_images_url_check
+        check (image_url ~* '^https?://');
+    end if;
+  end $constraints$;
 
   alter table public.imoveis_properties enable row level security;
+  alter table public.imoveis_property_images enable row level security;
 
   drop policy if exists imoveis_properties_select on public.imoveis_properties;
-  create policy imoveis_properties_select on public.imoveis_properties
-    for select using (
-      organization_id in (select public.fn_user_org_ids())
-      or public.fn_is_platform_admin()
-    );
-
+  create policy imoveis_properties_select on public.imoveis_properties for select using (
+    organization_id in (select public.fn_user_org_ids()) or public.fn_is_platform_admin()
+  );
   drop policy if exists imoveis_properties_insert on public.imoveis_properties;
-  create policy imoveis_properties_insert on public.imoveis_properties
-    for insert
-    with check (
-      public.fn_is_platform_admin()
-      or (
-        organization_id in (select public.fn_user_org_ids())
-        and public.fn_role_at_least(organization_id, 'agent')
-      )
-    );
-
+  create policy imoveis_properties_insert on public.imoveis_properties for insert with check (
+    public.fn_is_platform_admin() or (organization_id in (select public.fn_user_org_ids()) and public.fn_role_at_least(organization_id, 'agent'))
+  );
   drop policy if exists imoveis_properties_update on public.imoveis_properties;
-  create policy imoveis_properties_update on public.imoveis_properties
-    for update
-    using (
-      public.fn_is_platform_admin()
-      or (
-        organization_id in (select public.fn_user_org_ids())
-        and public.fn_role_at_least(organization_id, 'agent')
-      )
-    )
-    with check (
-      public.fn_is_platform_admin()
-      or (
-        organization_id in (select public.fn_user_org_ids())
-        and public.fn_role_at_least(organization_id, 'agent')
-      )
-    );
-
+  create policy imoveis_properties_update on public.imoveis_properties for update using (
+    public.fn_is_platform_admin() or (organization_id in (select public.fn_user_org_ids()) and public.fn_role_at_least(organization_id, 'agent'))
+  ) with check (
+    public.fn_is_platform_admin() or (organization_id in (select public.fn_user_org_ids()) and public.fn_role_at_least(organization_id, 'agent'))
+  );
   drop policy if exists imoveis_properties_delete on public.imoveis_properties;
-  create policy imoveis_properties_delete on public.imoveis_properties
-    for delete
-    using (
-      public.fn_is_platform_admin()
-      or (
-        organization_id in (select public.fn_user_org_ids())
-        and public.fn_role_at_least(organization_id, 'manager')
-      )
-    );
+  create policy imoveis_properties_delete on public.imoveis_properties for delete using (
+    public.fn_is_platform_admin() or (organization_id in (select public.fn_user_org_ids()) and public.fn_role_at_least(organization_id, 'manager'))
+  );
 
-  -- O baseline dá GRANT ALL em TABLES a anon; revogar aqui é obrigatório porque
-  -- esta tabela nasce dinamicamente na instalação do módulo.
+  drop policy if exists imoveis_property_images_select on public.imoveis_property_images;
+  create policy imoveis_property_images_select on public.imoveis_property_images for select using (
+    organization_id in (select public.fn_user_org_ids()) or public.fn_is_platform_admin()
+  );
+  drop policy if exists imoveis_property_images_insert on public.imoveis_property_images;
+  create policy imoveis_property_images_insert on public.imoveis_property_images for insert with check (
+    public.fn_is_platform_admin() or (organization_id in (select public.fn_user_org_ids()) and public.fn_role_at_least(organization_id, 'agent'))
+  );
+  drop policy if exists imoveis_property_images_update on public.imoveis_property_images;
+  create policy imoveis_property_images_update on public.imoveis_property_images for update using (
+    public.fn_is_platform_admin() or (organization_id in (select public.fn_user_org_ids()) and public.fn_role_at_least(organization_id, 'agent'))
+  ) with check (
+    public.fn_is_platform_admin() or (organization_id in (select public.fn_user_org_ids()) and public.fn_role_at_least(organization_id, 'agent'))
+  );
+  drop policy if exists imoveis_property_images_delete on public.imoveis_property_images;
+  create policy imoveis_property_images_delete on public.imoveis_property_images for delete using (
+    public.fn_is_platform_admin() or (organization_id in (select public.fn_user_org_ids()) and public.fn_role_at_least(organization_id, 'agent'))
+  );
+
   revoke all on public.imoveis_properties from anon;
-
-  -- RLS já está ligada por nós, então esta rotina não mexe na policy ampla;
-  -- ela continua aplicando as travas de suporte da ADR-0002.
+  revoke all on public.imoveis_property_images from anon;
   perform public.fn_proteger_modulo_provisionado();
+end;
+$f$;
 
-  comment on table public.imoveis_properties is
-    'Propriedades imobiliárias do módulo opcional Imóveis (ADR-0002).';
+revoke execute on function public.fn_imoveis_provisionar() from public, anon, authenticated;
+grant execute on function public.fn_imoveis_provisionar() to service_role;
 
-  comment on column public.imoveis_properties.price_cents is
-    'Preço inteiro em centavos da moeda ISO armazenada em currency.';
+-- ============================================================================
+-- PHASE 5 MIRROR: Imóveis marketing + Meta publishing.
+-- Same optional-module provisioner as migration 0487. It is defined here but
+-- only executed by fn_reaplicar_modulos_instalados when the module is installed.
+-- ============================================================================
 
-  comment on column public.imoveis_properties.currency is
-    'Moeda ISO 4217 em três letras; a lista de moedas servidas pela UX pode ser ampliada separadamente.';
+-- Phase 5 — AI marketing + Meta social publishing for the optional Imóveis module.
+
+-- Preserve the Phase 4 provisioner and wrap it so installs/re-applies also provision Phase 5.
+do $rename$
+begin
+  if to_regprocedure('public.fn_imoveis_provisionar_phase4()') is null
+     and to_regprocedure('public.fn_imoveis_provisionar()') is not null then
+    alter function public.fn_imoveis_provisionar() rename to fn_imoveis_provisionar_phase4;
+  end if;
+end;
+$rename$;
+
+create or replace function public.fn_imoveis_provisionar()
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $f$
+begin
+  perform public.fn_imoveis_provisionar_phase4();
+
+  create table if not exists public.imoveis_social_accounts (
+    id uuid primary key default gen_random_uuid(),
+    organization_id uuid not null references public.organizations(id) on delete cascade,
+    platform text not null check (platform in ('instagram','facebook')),
+    account_name text not null,
+    external_account_id text not null,
+    access_token_ciphertext bytea not null,
+    access_token_iv bytea not null,
+    access_token_tag bytea not null,
+    access_token_last4 text not null check (length(access_token_last4) between 1 and 4),
+    status text not null default 'connected' check (status in ('connected','disabled')),
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now(),
+    constraint imoveis_social_accounts_org_external_uid unique (organization_id, platform, external_account_id)
+  );
+  create unique index if not exists imoveis_social_accounts_org_id_uid
+    on public.imoveis_social_accounts (organization_id, id);
+  create index if not exists imoveis_social_accounts_org_idx
+    on public.imoveis_social_accounts (organization_id, platform, status);
+
+  create table if not exists public.imoveis_marketing_assets (
+    id uuid primary key default gen_random_uuid(),
+    organization_id uuid not null references public.organizations(id) on delete cascade,
+    property_id uuid not null,
+    platform text not null check (platform in ('instagram','facebook')),
+    language text not null check (language in ('pt-BR','es')),
+    revision integer not null default 1 check (revision > 0),
+    headline text not null default '',
+    caption text not null default '',
+    hashtags text[] not null default '{}',
+    cta text not null default '',
+    alt_text text not null default '',
+    status text not null default 'draft' check (status in ('draft','approved','published','failed')),
+    generated_by_ai boolean not null default true,
+    approved_at timestamptz,
+    published_at timestamptz,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now(),
+    constraint imoveis_marketing_assets_revision_uid
+      unique (organization_id, property_id, platform, language, revision)
+  );
+  create unique index if not exists imoveis_marketing_assets_org_id_uid
+    on public.imoveis_marketing_assets (organization_id, id);
+  create index if not exists imoveis_marketing_assets_property_idx
+    on public.imoveis_marketing_assets (organization_id, property_id, platform, language, revision desc);
+
+  create table if not exists public.imoveis_publication_jobs (
+    id uuid primary key default gen_random_uuid(),
+    organization_id uuid not null references public.organizations(id) on delete cascade,
+    property_id uuid not null,
+    marketing_asset_id uuid not null,
+    social_account_id uuid not null,
+    status text not null default 'pending' check (status in ('pending','publishing','published','failed','cancelled')),
+    scheduled_at timestamptz not null default now(),
+    provider_media_container_id text,
+    external_publication_id text,
+    permalink text,
+    attempts integer not null default 0 check (attempts >= 0),
+    next_attempt_at timestamptz,
+    last_error text,
+    last_enqueued_at timestamptz,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now(),
+    constraint imoveis_publication_jobs_asset_uid unique (organization_id, social_account_id, marketing_asset_id)
+  );
+  create index if not exists imoveis_publication_jobs_due_idx
+    on public.imoveis_publication_jobs (organization_id, status, scheduled_at, next_attempt_at, last_enqueued_at);
+
+  do $constraints$
+  begin
+    if not exists (select 1 from pg_constraint where conrelid='public.imoveis_marketing_assets'::regclass and conname='imoveis_marketing_assets_org_property_fk') then
+      alter table public.imoveis_marketing_assets
+        add constraint imoveis_marketing_assets_org_property_fk
+        foreign key (organization_id, property_id)
+        references public.imoveis_properties (organization_id, id) on delete cascade;
+    end if;
+    if not exists (select 1 from pg_constraint where conrelid='public.imoveis_publication_jobs'::regclass and conname='imoveis_publication_jobs_org_property_fk') then
+      alter table public.imoveis_publication_jobs
+        add constraint imoveis_publication_jobs_org_property_fk
+        foreign key (organization_id, property_id)
+        references public.imoveis_properties (organization_id, id) on delete cascade;
+    end if;
+    if not exists (select 1 from pg_constraint where conrelid='public.imoveis_publication_jobs'::regclass and conname='imoveis_publication_jobs_org_asset_fk') then
+      alter table public.imoveis_publication_jobs
+        add constraint imoveis_publication_jobs_org_asset_fk
+        foreign key (organization_id, marketing_asset_id)
+        references public.imoveis_marketing_assets (organization_id, id) on delete cascade;
+    end if;
+    if not exists (select 1 from pg_constraint where conrelid='public.imoveis_publication_jobs'::regclass and conname='imoveis_publication_jobs_org_social_fk') then
+      alter table public.imoveis_publication_jobs
+        add constraint imoveis_publication_jobs_org_social_fk
+        foreign key (organization_id, social_account_id)
+        references public.imoveis_social_accounts (organization_id, id) on delete cascade;
+    end if;
+  end $constraints$;
+
+  alter table public.imoveis_social_accounts enable row level security;
+  alter table public.imoveis_marketing_assets enable row level security;
+  alter table public.imoveis_publication_jobs enable row level security;
+
+  drop policy if exists imoveis_social_accounts_select on public.imoveis_social_accounts;
+  create policy imoveis_social_accounts_select on public.imoveis_social_accounts for select using (
+    public.fn_is_platform_admin() or (organization_id in (select public.fn_user_org_ids()) and public.fn_role_at_least(organization_id,'manager'))
+  );
+  drop policy if exists imoveis_social_accounts_write on public.imoveis_social_accounts;
+  create policy imoveis_social_accounts_write on public.imoveis_social_accounts for all using (
+    public.fn_is_platform_admin() or (organization_id in (select public.fn_user_org_ids()) and public.fn_role_at_least(organization_id,'manager'))
+  ) with check (
+    public.fn_is_platform_admin() or (organization_id in (select public.fn_user_org_ids()) and public.fn_role_at_least(organization_id,'manager'))
+  );
+
+  drop policy if exists imoveis_marketing_assets_select on public.imoveis_marketing_assets;
+  create policy imoveis_marketing_assets_select on public.imoveis_marketing_assets for select using (
+    public.fn_is_platform_admin() or organization_id in (select public.fn_user_org_ids())
+  );
+  drop policy if exists imoveis_marketing_assets_write on public.imoveis_marketing_assets;
+  create policy imoveis_marketing_assets_write on public.imoveis_marketing_assets for insert with check (
+    public.fn_is_platform_admin() or (organization_id in (select public.fn_user_org_ids()) and public.fn_role_at_least(organization_id,'agent'))
+  );
+  drop policy if exists imoveis_marketing_assets_update on public.imoveis_marketing_assets;
+  create policy imoveis_marketing_assets_update on public.imoveis_marketing_assets for update using (
+    public.fn_is_platform_admin() or (organization_id in (select public.fn_user_org_ids()) and public.fn_role_at_least(organization_id,'agent'))
+  ) with check (
+    public.fn_is_platform_admin() or (organization_id in (select public.fn_user_org_ids()) and public.fn_role_at_least(organization_id,'agent'))
+  );
+  drop policy if exists imoveis_marketing_assets_delete on public.imoveis_marketing_assets;
+  create policy imoveis_marketing_assets_delete on public.imoveis_marketing_assets for delete using (
+    public.fn_is_platform_admin() or (organization_id in (select public.fn_user_org_ids()) and public.fn_role_at_least(organization_id,'manager'))
+  );
+
+  drop policy if exists imoveis_publication_jobs_select on public.imoveis_publication_jobs;
+  create policy imoveis_publication_jobs_select on public.imoveis_publication_jobs for select using (
+    public.fn_is_platform_admin() or organization_id in (select public.fn_user_org_ids())
+  );
+  drop policy if exists imoveis_publication_jobs_write on public.imoveis_publication_jobs;
+  create policy imoveis_publication_jobs_write on public.imoveis_publication_jobs for all using (
+    public.fn_is_platform_admin() or (organization_id in (select public.fn_user_org_ids()) and public.fn_role_at_least(organization_id,'manager'))
+  ) with check (
+    public.fn_is_platform_admin() or (organization_id in (select public.fn_user_org_ids()) and public.fn_role_at_least(organization_id,'manager'))
+  );
+
+  revoke all on public.imoveis_social_accounts from anon, authenticated;
+  revoke all on public.imoveis_marketing_assets from anon;
+  revoke all on public.imoveis_publication_jobs from anon;
+
+  drop trigger if exists trg_imoveis_social_accounts_updated_at on public.imoveis_social_accounts;
+  create trigger trg_imoveis_social_accounts_updated_at before update on public.imoveis_social_accounts for each row execute function public.fn_set_updated_at();
+  drop trigger if exists trg_imoveis_marketing_assets_updated_at on public.imoveis_marketing_assets;
+  create trigger trg_imoveis_marketing_assets_updated_at before update on public.imoveis_marketing_assets for each row execute function public.fn_set_updated_at();
+  drop trigger if exists trg_imoveis_publication_jobs_updated_at on public.imoveis_publication_jobs;
+  create trigger trg_imoveis_publication_jobs_updated_at before update on public.imoveis_publication_jobs for each row execute function public.fn_set_updated_at();
+
+  drop trigger if exists trg_imoveis_social_accounts_audit on public.imoveis_social_accounts;
+  create trigger trg_imoveis_social_accounts_audit after insert or update or delete on public.imoveis_social_accounts for each row execute function public.fn_audit_log_row();
+  drop trigger if exists trg_imoveis_marketing_assets_audit on public.imoveis_marketing_assets;
+  create trigger trg_imoveis_marketing_assets_audit after insert or update or delete on public.imoveis_marketing_assets for each row execute function public.fn_audit_log_row();
+  drop trigger if exists trg_imoveis_publication_jobs_audit on public.imoveis_publication_jobs;
+  create trigger trg_imoveis_publication_jobs_audit after insert or update or delete on public.imoveis_publication_jobs for each row execute function public.fn_audit_log_row();
+
+  perform public.fn_proteger_modulo_provisionado();
 end;
 $f$;
 

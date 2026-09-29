@@ -115,7 +115,7 @@ export function FormularioDeConversoes({
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor="access_token">{t("Token de acesso")}</Label>
+          <Label htmlFor="access_token">{t("Token de acesso da integração")}</Label>
           <Input
             id="access_token"
             type="password"

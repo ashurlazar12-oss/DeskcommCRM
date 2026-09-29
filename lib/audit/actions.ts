@@ -1002,6 +1002,16 @@ export const AUDIT_ACTIONS = [
   "imoveis.property_created",
   "imoveis.property_updated",
   "imoveis.property_deleted",
+  "imoveis.property_details_updated",
+  "imoveis.property_image_added",
+  "imoveis.property_image_deleted",
+  "imoveis.social_account_connected",
+  "imoveis.social_account_disabled",
+  "imoveis.marketing_generated",
+  "imoveis.marketing_updated",
+  "imoveis.publication_queued",
+  "imoveis.publication_published",
+  "imoveis.publication_failed",
 
 ] as const;
 

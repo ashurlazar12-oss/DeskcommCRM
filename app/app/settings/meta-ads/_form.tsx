@@ -92,7 +92,7 @@ export function FormularioDeMetaAds({
     <Card className="p-6">
       <form onSubmit={salvar} className="flex flex-col gap-5">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="access_token">{t("Token de acesso")}</Label>
+          <Label htmlFor="access_token">{t("Token de acesso do Meta Ads")}</Label>
           <Input
             id="access_token"
             type="password"
