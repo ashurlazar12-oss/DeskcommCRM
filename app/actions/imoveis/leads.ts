@@ -49,7 +49,7 @@ async function auditRelationship(
   action: "imoveis.lead_property_linked" | "imoveis.lead_property_unlinked",
   organizationId: string,
   actorUserId: string,
-  resourceId: string,
+  row: { id: string },
   metadata: Record<string, unknown>,
 ) {
   const requestHeaders = await headers();
@@ -58,7 +58,7 @@ async function auditRelationship(
     actorUserId,
     organizationId,
     resourceType: "imoveis_lead_property",
-    resourceId,
+    resourceId: row.id,
     requestId: requestHeaders.get("x-request-id"),
     ip: requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
     userAgent: requestHeaders.get("user-agent"),
@@ -126,7 +126,7 @@ export async function vincularLeadAImovel(
     "imoveis.lead_property_linked",
     ctx.org.orgId,
     ctx.user.id,
-    data.id,
+    data,
     {
       lead_id: data.lead_id,
       property_id: data.property_id,
@@ -159,13 +159,13 @@ export async function desvincularLeadDeImovel(
     .maybeSingle();
 
   if (error) return { ok: false, error: "Não foi possível remover o vínculo." };
-  if (!data) return { ok: false, error: "Vínculo não encontrado." };
+  if (!data) return { ok: false, error: "Vínculo não encontrado." }
 
   await auditRelationship(
     "imoveis.lead_property_unlinked",
     ctx.org.orgId,
     ctx.user.id,
-    data.id,
+    data,
     {
       lead_id: data.lead_id,
       property_id: data.property_id,
