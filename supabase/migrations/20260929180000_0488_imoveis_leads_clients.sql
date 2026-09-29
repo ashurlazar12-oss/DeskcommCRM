@@ -2,6 +2,9 @@
 -- No matching algorithm is introduced here. This phase creates the durable relationship
 -- between the existing CRM commercial records and the Imóveis property records.
 
+create unique index if not exists crm_leads_org_id_uid
+  on public.crm_leads (organization_id, id);
+
 do $rename$
 begin
   if to_regprocedure('public.fn_imoveis_provisionar_phase5()') is null
@@ -19,9 +22,6 @@ set search_path = public, pg_temp
 as $f$
 begin
   perform public.fn_imoveis_provisionar_phase5();
-
-  create unique index if not exists crm_leads_org_id_uid
-    on public.crm_leads (organization_id, id);
 
   create table if not exists public.imoveis_lead_properties (
     id uuid primary key default gen_random_uuid(),
