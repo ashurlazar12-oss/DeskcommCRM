@@ -66,6 +66,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     user.is_platform_admin || ROLE_RANK[org.role] >= ROLE_RANK.manager;
   const podePublicar =
     user.is_platform_admin || ROLE_RANK[org.role] >= ROLE_RANK.manager;
+  const marketing = await readMarketingInitialData(typedProperty.id, org.orgId, podePublicar);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
