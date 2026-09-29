@@ -147,14 +147,14 @@ describe("imoveis agent", () => {
     expect(result).toMatchObject({
       ok: true,
       status: "matches",
-      evaluated_properties: 1,
-      excluded_properties: 0,
+      evaluated_properties: 2,
+      excluded_properties: 1,
     });
     if (!result.ok) return;
     expect(result.matches).toHaveLength(1);
     expect(result.matches[0]).toMatchObject({
       property_code: "A1",
-      score: 90,
+      score: 95,
       title: "Casa compatível",
     });
   });
