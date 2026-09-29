@@ -37,7 +37,7 @@ const RODAPE = (() => {
   const linhas = baseline
     .split("\n")
     .filter((l) => /^do \$f\$ begin perform public\.fn_(reaplicar|conferir)_modulos_instalados\(\); end \$f\$;$/.test(l));
-  return linhas;
+  return linhas.slice(-2);
 })();
 
 /** `psql -q -f` sem ON_ERROR_STOP, como `reaplicar_baseline`; devolve o que o filtro do kit acusa. */
