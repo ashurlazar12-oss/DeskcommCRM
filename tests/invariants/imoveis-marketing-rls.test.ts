@@ -85,9 +85,10 @@ describe("Imóveis marketing — isolamento", () => {
     `)).toBe(true);
   });
 
-  it("viewer vê assets da própria organização, mas não contas sociais", () => {
+  it("viewer vê assets da própria organização, mas a tabela de credenciais sociais é server-only", () => {
     expect(countAs(GOV_VIEWER, `select count(*) from public.imoveis_marketing_assets where id = '${ASSET_A}'`)).toBe(1);
     expect(countAs(GOV_VIEWER, `select count(*) from public.imoveis_social_accounts where id = '${ACCOUNT_A}'`)).toBe(0);
+    expect(countAs(GOV_MANAGER, `select count(*) from public.imoveis_social_accounts where id = '${ACCOUNT_A}'`)).toBe(0);
   });
 
   it("manager de B não lê nem altera ativos de A", () => {
