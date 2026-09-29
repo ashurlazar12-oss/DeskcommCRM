@@ -13379,6 +13379,31 @@ export const DICIONARIO: Traducoes = {
   },
   "Nenhuma propriedade cadastrada ainda.": { es: "Aún no hay propiedades registradas." },
   "Nenhum resultado encontrado.": { es: "No se encontraron resultados." },
+  "Casa": { es: "Casa" },
+  "Apartamento": { es: "Apartamento" },
+  "Terreno": { es: "Terreno" },
+  "Comercial": { es: "Comercial" },
+  "Sala comercial": { es: "Local comercial" },
+  "Galpão": { es: "Almacén" },
+  "Voltar para propriedades": { es: "Volver a propiedades" },
+  "Sem título": { es: "Sin título" },
+  "Mantenha cadastro, localização e características em uma única ficha.": {
+    es: "Mantenga los datos, la ubicación y las características en una sola ficha.",
+  },
+  "As alterações ficam registradas na auditoria.": {
+    es: "Los cambios quedan registrados en la auditoría.",
+  },
+  "Galeria": { es: "Galería" },
+  "Cadastre URLs de imagens da propriedade para manter a galeria ligada à ficha.": {
+    es: "Registre URLs de imágenes para mantener la galería vinculada a la ficha.",
+  },
+  "Texto alternativo": { es: "Texto alternativo" },
+  "Excluir esta imagem?": { es: "¿Eliminar esta imagen?" },
+  "Criada em": { es: "Creada el" },
+  "Exclusão da propriedade continua disponível na lista principal.": {
+    es: "La eliminación de la propiedad sigue disponible en la lista principal.",
+  },
+
   "Voltar para imóveis": { es: "Volver a inmuebles" },
   "Ficha completa da propriedade.": { es: "Ficha completa de la propiedad." },
   "Detalhes da propriedade": { es: "Detalles de la propiedad" },
