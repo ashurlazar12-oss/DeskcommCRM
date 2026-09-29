@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import { audit } from "@/lib/audit";
 import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
+import { supportWriteError } from "@/lib/impersonate/support";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { resolveLanguageModel, DEFAULT_BOT_MODEL } from "@/lib/ai/gateway";
 import { encryptKey, bufToBytea } from "@/lib/crypto/aes_gcm";
@@ -62,6 +63,7 @@ async function getContext(requiredRole: "agent" | "manager") {
 
   const rank = user.is_platform_admin ? ROLE_RANK.admin : ROLE_RANK[activeOrg.role];
   if (rank < ROLE_RANK[requiredRole]) return null;
+  if (supportWriteError(user.support, activeOrg.orgId)) return null;
 
   return { user, organizationId: activeOrg.orgId };
 }
@@ -117,7 +119,7 @@ async function auditMarketing(
   organizationId: string,
   actorUserId: string,
   resourceType: string,
-  resourceId: string | null,
+  id: string,
   metadata: Record<string, unknown>,
 ): Promise<void> {
   const requestHeaders = await headers();
@@ -126,7 +128,7 @@ async function auditMarketing(
     actorUserId,
     organizationId,
     resourceType,
-    resourceId,
+    resourceId: id,
     requestId: requestHeaders.get("x-request-id"),
     ip: requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
     userAgent: requestHeaders.get("user-agent"),
