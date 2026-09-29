@@ -107,3 +107,8 @@ $f$;
 
 revoke execute on function public.fn_imoveis_provisionar() from public, anon, authenticated;
 grant execute on function public.fn_imoveis_provisionar() to service_role;
+
+
+-- Existing installed modules must receive the Phase 4 columns/table during migration.
+do $f$ begin perform public.fn_reaplicar_modulos_instalados(); end $f$;
+do $f$ begin perform public.fn_conferir_modulos_instalados(); end $f$;
