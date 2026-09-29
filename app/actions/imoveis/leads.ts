@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import { audit } from "@/lib/audit";
@@ -10,10 +11,10 @@ import { supportWriteError } from "@/lib/impersonate/support";
 import {
   IMOVEIS_LEAD_RELATIONSHIPS,
   type ImoveisLeadRelationship,
+  type ImoveisLeadsDatabase,
 } from "@/lib/imoveis/leads";
 import { createClient } from "@/lib/supabase/server";
 import { createImoveisClient } from "@/lib/imoveis/server";
-import { createImoveisLeadsClient } from "@/lib/imoveis/leads";
 
 export type ImoveisLeadActionResult =
   | { ok: true; message: string }
@@ -82,7 +83,7 @@ export async function vincularLeadAImovel(
 
   const imoveis = await createImoveisClient();
   const crm = await createClient();
-  const links = await createImoveisLeadsClient();
+  const links = (await createClient()) as unknown as SupabaseClient<ImoveisLeadsDatabase>;
 
   const [{ data: property }, { data: lead }] = await Promise.all([
     imoveis
