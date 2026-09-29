@@ -8,6 +8,7 @@ moldeDeProvisionadora({
     "imoveis_social_accounts",
     "imoveis_marketing_assets",
     "imoveis_publication_jobs",
+    "imoveis_lead_properties",
   ],
   protecaoPropria: [
     "imoveis_properties",
@@ -15,5 +16,6 @@ moldeDeProvisionadora({
     "imoveis_social_accounts",
     "imoveis_marketing_assets",
     "imoveis_publication_jobs",
+    "imoveis_lead_properties",
   ],
 });
