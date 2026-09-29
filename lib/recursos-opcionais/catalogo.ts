@@ -117,6 +117,10 @@ const TEXTO_DO_MODULO: Record<ModuloOpcional, { nome: string; oQueFaz: string }>
     nome: "Honorários",
     oQueFaz: "Contratos de honorários com parcelas e o controle do que já foi pago.",
   },
+  imoveis: {
+    nome: "Imóveis",
+    oQueFaz: "Cadastro e gestão das propriedades imobiliárias, base para marketing, leads, matching e operação comercial.",
+  },
 };
 
 /**

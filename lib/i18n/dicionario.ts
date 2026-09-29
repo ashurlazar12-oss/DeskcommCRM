@@ -13354,6 +13354,10 @@ export const DICIONARIO: Traducoes = {
   "Rascunhos que a IA terminou e ninguém revisou. Confira antes de enviar.": { es: "Borradores que la IA terminó y nadie revisó. Revísalos antes de enviar." },
   "Proposta sem título": { es: "Propuesta sin título" },
   // ─── RECURSOS OPCIONAIS: a área única (doc 80) ───
+  "Imóveis": { es: "Inmuebles" },
+  "Cadastro e gestão das propriedades imobiliárias, base para marketing, leads, matching e operação comercial.": {
+    es: "Registro y gestión de propiedades inmobiliarias, base para marketing, leads, matching y operación comercial.",
+  },
   "O agente consulta o banco de outro sistema da empresa, como um ERP ou outro CRM.": { es: "El agente consulta la base de datos de otro sistema de la empresa, como un ERP u otro CRM." },
   "A IA conduz um roteiro de perguntas na conversa e grava as respostas na ficha do cliente.": { es: "La IA conduce un guion de preguntas en la conversación y guarda las respuestas en la ficha del cliente." },
   "A IA monta a proposta pelos modelos da empresa e o PDF sai pelo WhatsApp.": { es: "La IA arma la propuesta con las plantillas de la empresa y el PDF sale por WhatsApp." },

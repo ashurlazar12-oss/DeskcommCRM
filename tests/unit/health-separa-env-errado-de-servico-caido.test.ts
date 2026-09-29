@@ -49,6 +49,19 @@ describe("GET /api/v1/health — o motivo aponta para o que precisa ser feito", 
   beforeEach(() => {
     vi.resetModules();
     vi.doUnmock("@/lib/env");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url === "https://projeto-do-cliente.supabase.co/rest/v1/organizations?select=id&limit=1") {
+          return new Response(null, { status: 200 });
+        }
+        if (url === "http://127.0.0.1:9") {
+          throw new Error("fetch failed");
+        }
+        throw new Error("unexpected network call in health test: " + url);
+      }),
+    );
   });
 
   it("⭐ `.env` com as aspas sobrando: o motivo é a CONFIGURAÇÃO, e o serviço nem é procurado", async () => {
@@ -56,16 +69,14 @@ describe("GET /api/v1/health — o motivo aponta para o que precisa ser feito", 
     comEnv('"https://fila-do-cliente.exemplo:80"', "token-de-teste");
     const { GET } = await import("@/app/api/v1/health/route");
 
-    const t0 = Date.now();
     const { data } = await (await GET(pedido())).json();
-    const decorrido = Date.now() - t0;
+    const chamadas = vi.mocked(fetch).mock.calls.map(([input]) => String(input));
 
     expect(data.checks.redis.reason).toBe("configuracao_invalida");
     expect(data.checks.redis.status).toBe("down");
-    // Sem ida à rede: um endereço que não é endereço não tem o que ser tentado.
-    // O número é folgado de propósito — o que se mede é a AUSÊNCIA da tentativa,
-    // não a latência.
-    expect(decorrido, "houve ida à rede para um endereço malformado").toBeLessThan(2_000);
+    // O que importa é a ausência da tentativa ao endereço malformado, não a
+    // latência de outras sondas que a mesma rota executa em paralelo.
+    expect(chamadas).not.toContain('"https://fila-do-cliente.exemplo:80"');
   });
 
   it("⭐ configuração BEM formada e serviço inalcançável: o motivo volta a ser de alcance", async () => {
