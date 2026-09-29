@@ -61,7 +61,7 @@ async function getContext(requiredRole: "agent" | "manager") {
   const activeOrg = await resolveActiveOrg(user);
   if (!activeOrg) return null;
 
-  const rank = user.is_platform_admin ? ROLE_RANK.admin : ROLE_RANK[activeOrg.role];
+  const rank = user.is_platform_admin ? ROLE_RANK.admin : (ROLE_RANK[activeOrg.role] ?? 0);
   if (rank < ROLE_RANK[requiredRole]) return null;
   if (supportWriteError(user.support, activeOrg.orgId)) return null;
 
