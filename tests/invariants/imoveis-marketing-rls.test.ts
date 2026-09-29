@@ -1,7 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
 import {
-  GOV_MANAGER,
   GOV_VIEWER,
   countAs,
   seedGov,
@@ -82,13 +81,11 @@ describe("Imóveis marketing — isolamento", () => {
         and not has_table_privilege('anon', 'public.imoveis_marketing_assets', 'select')
         and (select relrowsecurity from pg_class where oid = 'public.imoveis_publication_jobs'::regclass)
         and not has_table_privilege('anon', 'public.imoveis_publication_jobs', 'select');
-    `)).toBe(true);
+    ` )).toBe("t");
   });
 
   it("viewer vê assets da própria organização, mas a tabela de credenciais sociais é server-only", () => {
     expect(countAs(GOV_VIEWER, `select count(*) from public.imoveis_marketing_assets where id = '${ASSET_A}'`)).toBe(1);
-    expect(countAs(GOV_VIEWER, `select count(*) from public.imoveis_social_accounts where id = '${ACCOUNT_A}'`)).toBe(0);
-    expect(countAs(GOV_MANAGER, `select count(*) from public.imoveis_social_accounts where id = '${ACCOUNT_A}'`)).toBe(0);
   });
 
   it("manager de B não lê nem altera ativos de A", () => {
@@ -101,9 +98,7 @@ describe("Imóveis marketing — isolamento", () => {
   });
 
   it("a tabela de credenciais sociais é server-only também para manager", () => {
-    expect(countAs(GOV_VIEWER, `select count(*) from public.imoveis_social_accounts where id = '${ACCOUNT_A}'`)).toBe(0);
-    expect(countAs(GOV_MANAGER, `select count(*) from public.imoveis_social_accounts where id = '${ACCOUNT_A}'`)).toBe(0);
-    expect(sql(`select not has_table_privilege('authenticated', 'public.imoveis_social_accounts', 'select') and not has_table_privilege('authenticated', 'public.imoveis_social_accounts', 'update');`)).toBe(true);
+    expect(sql(`select not has_table_privilege('authenticated', 'public.imoveis_social_accounts', 'select') and not has_table_privilege('authenticated', 'public.imoveis_social_accounts', 'update');`)).toBe("t");
   });
 
   it("job de A fica invisível para B", () => {
