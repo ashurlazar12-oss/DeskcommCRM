@@ -4,7 +4,8 @@ import type { NextRequest } from "next/server";
 import { fail, ok } from "@/lib/api/wrappers";
 import { autorizaCron } from "@/lib/auth/cron-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { emitPublicationRequested } from "@/lib/imoveis/marketing";
+import { emitPublicationRequested, type MarketingDatabase } from "@/lib/imoveis/marketing";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,7 @@ async function handle(req: NextRequest): Promise<Response> {
   const requestId = randomUUID();
   if (!autorizaCron(req)) return fail("forbidden", "Cron secret missing or invalid.", 403, { requestId });
 
-  const admin = createAdminClient();
+  const admin = createAdminClient() as unknown as SupabaseClient<MarketingDatabase>;
   const now = new Date();
   const nowIso = now.toISOString();
   const staleEnqueue = new Date(now.getTime() - 120_000).toISOString();
