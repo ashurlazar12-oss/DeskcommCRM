@@ -160,7 +160,7 @@ begin
     public.fn_is_platform_admin() or (organization_id in (select public.fn_user_org_ids()) and public.fn_role_at_least(organization_id,'manager'))
   );
 
-  revoke all on public.imoveis_social_accounts from anon;
+  revoke all on public.imoveis_social_accounts from anon, authenticated;
   revoke all on public.imoveis_marketing_assets from anon;
   revoke all on public.imoveis_publication_jobs from anon;
 
