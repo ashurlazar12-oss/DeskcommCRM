@@ -106,8 +106,25 @@ begin
   perform public.fn_proteger_modulo_provisionado();
 end;
 $f$;
+revoke execute on function public.fn_imoveis_provisionar() from public, anon, authenticated;
+grant execute on function public.fn_imoveis_provisionar() to service_role;
+
+do $do$
+begin
+  if to_regclass('public.imoveis_properties') is not null then
+    perform public.fn_imoveis_provisionar();
+  end if;
+end;
+$do$;
+
+do $f$ begin perform public.fn_reaplicar_modulos_instalados(); end $f$;
+
 do $constraints$
 begin
+  if to_regclass('public.imoveis_lead_properties') is null then
+    return;
+  end if;
+
   alter table public.imoveis_lead_properties
     drop constraint if exists imoveis_lead_properties_lead_id_fkey;
   alter table public.imoveis_lead_properties
@@ -137,17 +154,6 @@ begin
       on delete cascade;
   end if;
 end $constraints$;
-
-revoke execute on function public.fn_imoveis_provisionar() from public, anon, authenticated;
-grant execute on function public.fn_imoveis_provisionar() to service_role;
-
-do $do$
-begin
-  if to_regclass('public.imoveis_properties') is not null then
-    perform public.fn_imoveis_provisionar();
-  end if;
-end;
-$do$;
 
 do $f$ begin perform public.fn_reaplicar_modulos_instalados(); end $f$;
 do $f$ begin perform public.fn_conferir_modulos_instalados(); end $f$;
