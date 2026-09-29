@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -298,6 +299,8 @@ export function Imoveis({
                   <div className="flex items-center gap-2 md:justify-end">
                     <Button type="submit" disabled={pending} variant="outline" size="sm">
                       {pending ? t("Salvando…") : t("Salvar")}
+                    </Button>
+                    <Link href={"/app/imoveis/" + property.id} className="text-xs text-text-muted hover:text-text">{t("Abrir ficha")}</Link>
                     </Button>
                     {podeExcluir ? (
                       <Button
