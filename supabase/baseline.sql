@@ -43189,7 +43189,6 @@ begin
   perform public.fn_proteger_modulo_provisionado();
 end;
 $f$;
-
 revoke execute on function public.fn_imoveis_provisionar() from public, anon, authenticated;
 grant execute on function public.fn_imoveis_provisionar() to service_role;
 
