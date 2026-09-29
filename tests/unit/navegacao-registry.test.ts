@@ -186,8 +186,8 @@ describe("hubSections", () => {
       "/app/comandas",
       "/app/products",
       "/app/imports",
-      "/app/imoveis",
       "/app/settings/tenant/pipelines",
+      "/app/imoveis",
       "/app/proposals",
     ]);
   });
