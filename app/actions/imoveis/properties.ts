@@ -122,7 +122,7 @@ async function auditar(
     | "imoveis.property_image_added"
     | "imoveis.property_image_deleted",
   ctx: { user: { id: string }; org: { orgId: string } },
-  resourceId: string,
+  auditResourceId: string,
   metadata: Record<string, unknown>,
 ) {
   const hdrs = await headers();
@@ -131,7 +131,7 @@ async function auditar(
     actorUserId: ctx.user.id,
     organizationId: ctx.org.orgId,
     resourceType: action.includes("image") ? "imoveis_property_image" : "imoveis_property",
-    resourceId,
+    resourceId: auditResourceId,
     requestId: hdrs.get("x-request-id"),
     ip: hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
     userAgent: hdrs.get("user-agent"),
