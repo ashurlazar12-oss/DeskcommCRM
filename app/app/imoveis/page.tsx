@@ -20,7 +20,9 @@ export default async function Page() {
   const supabase = await createImoveisClient();
   const { data, error } = await supabase
     .from("imoveis_properties")
-    .select("id, organization_id, property_code, status, price_cents, currency, created_at, updated_at")
+    .select(
+      "id, organization_id, property_code, status, price_cents, currency, title, property_type, listing_type, description, address, city, latitude, longitude, bedrooms, bathrooms, area_m2, created_at, updated_at",
+    )
     .eq("organization_id", org.orgId)
     .order("created_at", { ascending: false })
     .limit(200);
@@ -32,8 +34,10 @@ export default async function Page() {
   const properties = (data ?? []) as ImovelRow[];
   const moduleError = error && tabelaNaoInstalada(error) ? MODULO_NAO_INSTALADO : undefined;
   const t = (texto: string) => traduzir(texto, user.idioma);
-  const podeGerenciar = !moduleError && (user.is_platform_admin || ROLE_RANK[org.role] >= ROLE_RANK.agent);
-  const podeExcluir = !moduleError && (user.is_platform_admin || ROLE_RANK[org.role] >= ROLE_RANK.manager);
+  const podeGerenciar =
+    !moduleError && (user.is_platform_admin || ROLE_RANK[org.role] >= ROLE_RANK.agent);
+  const podeExcluir =
+    !moduleError && (user.is_platform_admin || ROLE_RANK[org.role] >= ROLE_RANK.manager);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
