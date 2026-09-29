@@ -159,7 +159,7 @@ export async function desvincularLeadDeImovel(
     .maybeSingle();
 
   if (error) return { ok: false, error: "Não foi possível remover o vínculo." };
-  if (!data) return { ok: false, error: "Vínculo não encontrado." }
+  if (!data) return { ok: false, error: "Vínculo não encontrado." };
 
   await auditRelationship(
     "imoveis.lead_property_unlinked",
