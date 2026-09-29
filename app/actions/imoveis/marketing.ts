@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { generateText } from "ai";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import { audit } from "@/lib/audit";
@@ -12,6 +13,7 @@ import { encryptKey, bufToBytea } from "@/lib/crypto/aes_gcm";
 import {
   createMarketingClient,
   emitPublicationRequested,
+  type MarketingDatabase,
   IMOVEIS_SOCIAL_PLATFORMS,
   IMOVEIS_MARKETING_LANGUAGES,
   normalizarHashtags,
@@ -19,6 +21,7 @@ import {
   type ImoveisSocialPlatform,
 } from "@/lib/imoveis/marketing";
 import { tabelaNaoInstalada } from "@/lib/imoveis/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export type MarketingActionResult =
   | { ok: true; message: string }
@@ -149,7 +152,7 @@ export async function conectarContaSocial(formData: FormData): Promise<Marketing
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
 
   const encrypted = encryptKey(parsed.data.access_token);
-  const supabase = await createMarketingClient();
+  const supabase = createAdminClient() as unknown as SupabaseClient<MarketingDatabase>;
   const { data, error } = await supabase
     .from("imoveis_social_accounts")
     .insert({
@@ -187,7 +190,7 @@ export async function desativarContaSocial(formData: FormData): Promise<Marketin
   const accountId = String(formData.get("social_account_id") ?? "");
   if (!z.string().uuid().safeParse(accountId).success) return { ok: false, error: "Conta social inválida." };
 
-  const supabase = await createMarketingClient();
+  const supabase = createAdminClient() as unknown as SupabaseClient<MarketingDatabase>;
   const { data, error } = await supabase
     .from("imoveis_social_accounts")
     .update({ status: "disabled" })
