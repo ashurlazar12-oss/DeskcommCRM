@@ -7,7 +7,6 @@ import { rotuloDoContato } from "@/lib/contacts/rotulo-do-contato";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { readMarketingInitialData } from "@/lib/imoveis/marketing";
-import { ImoveisMatchingClient } from "./matching-client";
 import {
   hasImoveisMatchingCriteria,
   matchLeadToProperty,
@@ -21,8 +20,9 @@ import {
 } from "@/lib/imoveis/leads";
 
 import { ImovelDetalhe } from "./_client";
-import { MarketingPanel } from "./marketing-client";
 import { LeadPropertyClient } from "./lead-property-client";
+import { ImoveisMatchingClient } from "./matching-client";
+import { MarketingPanel } from "./marketing-client";
 
 export const dynamic = "force-dynamic";
 
@@ -57,10 +57,12 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
   if (error || !property) notFound();
 
+  const typedProperty = property as ImovelRow;
+
   const { data: images, error: imagesError } = await supabase
     .from("imoveis_property_images")
     .select("id, organization_id, property_id, image_url, alt_text, sort_order, created_at")
-    .eq("property_id", property.id)
+    .eq("property_id", typedProperty.id)
     .eq("organization_id", org.orgId)
     .order("sort_order", { ascending: true });
 
@@ -68,9 +70,10 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     throw new Error(imagesError.message);
   }
 
-  const initialImages = imagesError && tabelaNaoInstalada(imagesError)
-    ? []
-    : ((images ?? []) as ImovelImagemRow[]);
+  const initialImages =
+    imagesError && tabelaNaoInstalada(imagesError)
+      ? []
+      : ((images ?? []) as ImovelImagemRow[]);
 
   const crm = await createClient();
   const linksDb = (await createClient()) as unknown as import("@supabase/supabase-js").SupabaseClient<ImoveisLeadsDatabase>;
@@ -78,7 +81,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const { data: links, error: linksError } = await linksDb
     .from("imoveis_lead_properties")
     .select("id, organization_id, lead_id, property_id, relationship, notes, created_at, updated_at")
-    .eq("property_id", property.id)
+    .eq("property_id", typedProperty.id)
     .eq("organization_id", org.orgId)
     .order("updated_at", { ascending: false });
 
@@ -86,9 +89,10 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     throw new Error(linksError.message);
   }
 
-  const linkRows = linksError && tabelaNaoInstalada(linksError)
-    ? []
-    : ((links ?? []) as ImoveisLeadPropertyRow[]);
+  const linkRows =
+    linksError && tabelaNaoInstalada(linksError)
+      ? []
+      : ((links ?? []) as ImoveisLeadPropertyRow[]);
 
   const leadIds = linkRows.map((link) => link.lead_id);
   const { data: leadRows, error: leadsError } = await crm
@@ -108,10 +112,12 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     title: string;
     status: "open" | "won" | "lost";
     contact_id: string | null;
+    custom_fields: Record<string, unknown>;
   }>;
+
   const contactIds = Array.from(
     new Set([
-      ...allLeadRows.map((lead) => lead.contact_id).filter((id): id is string => !!id),
+      ...allLeadRows.map((lead) => lead.contact_id).filter((value): value is string => !!value),
       ...leadIds,
     ]),
   );
@@ -131,7 +137,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       display_name: string | null;
     }>).map((contact) => [
       contact.id,
-      rotuloDoContato({ display_name: contact.display_name, name: contact.name, phone_number: null }),
+      rotuloDoContato({
+        display_name: contact.display_name,
+        name: contact.name,
+        phone_number: null,
+      }),
     ]),
   );
 
@@ -143,13 +153,41 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     contact_name: lead.contact_id ? contactById.get(lead.contact_id) ?? null : null,
   }));
 
-  const matchingLeads: ImoveisMatchingLead[] = allLeadRows.map((lead) => ({\n    id: lead.id,\n    title: lead.title,\n    custom_fields: lead.custom_fields ?? {},\n  }));\n  const matchingProperty = {\n    id: typedProperty.id,\n    title: typedProperty.title,\n    status: typedProperty.status,\n    price_cents: typedProperty.price_cents,\n    currency: typedProperty.currency,\n    property_type: typedProperty.property_type,\n    listing_type: typedProperty.listing_type,\n    city: typedProperty.city,\n    bedrooms: typedProperty.bedrooms,\n    bathrooms: typedProperty.bathrooms,\n    area_m2: typedProperty.area_m2,\n  };\n\n  const matchingResults = matchingLeads.map((lead) => matchLeadToProperty(lead, matchingProperty));\n  const matches = rankLeadsForProperty(matchingLeads, matchingProperty);\n  const excludedCount = matchingResults.filter((result) => result.excluded).length;\n  const leadsWithCriteria = matchingLeads.filter((lead) => hasImoveisMatchingCriteria(lead.custom_fields)).length;\n\n  const leadById = new Map(leadOptions.map((lead) => [lead.id, lead]));
+  const matchingLeads: ImoveisMatchingLead[] = allLeadRows.map((lead) => ({
+    id: lead.id,
+    title: lead.title,
+    custom_fields: lead.custom_fields ?? {},
+  }));
+
+  const matchingProperty = {
+    id: typedProperty.id,
+    title: typedProperty.title,
+    status: typedProperty.status,
+    price_cents: typedProperty.price_cents,
+    currency: typedProperty.currency,
+    property_type: typedProperty.property_type,
+    listing_type: typedProperty.listing_type,
+    city: typedProperty.city,
+    bedrooms: typedProperty.bedrooms,
+    bathrooms: typedProperty.bathrooms,
+    area_m2: typedProperty.area_m2,
+  };
+
+  const matchingResults = matchingLeads.map((lead) =>
+    matchLeadToProperty(lead, matchingProperty),
+  );
+  const matches = rankLeadsForProperty(matchingLeads, matchingProperty);
+  const excludedCount = matchingResults.filter((result) => result.excluded).length;
+  const leadsWithCriteria = matchingLeads.filter((lead) =>
+    hasImoveisMatchingCriteria(lead.custom_fields),
+  ).length;
+
+  const leadById = new Map(leadOptions.map((lead) => [lead.id, lead]));
   const initialLeadLinks = linkRows.map((link) => ({
     ...link,
     lead: leadById.get(link.lead_id) ?? null,
   }));
 
-  const typedProperty = property as ImovelRow;
   const t = (texto: string) => traduzir(texto, user.idioma);
   const podeGerenciar =
     user.is_platform_admin || ROLE_RANK[org.role] >= ROLE_RANK.agent;
@@ -157,7 +195,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     user.is_platform_admin || ROLE_RANK[org.role] >= ROLE_RANK.manager;
   const podePublicar =
     user.is_platform_admin || ROLE_RANK[org.role] >= ROLE_RANK.manager;
-  const marketing = await readMarketingInitialData(typedProperty.id, org.orgId, podePublicar);
+  const marketing = await readMarketingInitialData(
+    typedProperty.id,
+    org.orgId,
+    podePublicar,
+  );
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
@@ -172,6 +214,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         initialLinks={initialLeadLinks}
         leadOptions={leadOptions}
         podeGerenciar={podeGerenciar}
+      />
+      <ImoveisMatchingClient
+        matches={matches}
+        excludedCount={excludedCount}
+        leadsWithCriteria={leadsWithCriteria}
       />
       <MarketingPanel
         propertyId={typedProperty.id}
