@@ -7,6 +7,13 @@ import { rotuloDoContato } from "@/lib/contacts/rotulo-do-contato";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { readMarketingInitialData } from "@/lib/imoveis/marketing";
+import { ImoveisMatchingClient } from "./matching-client";
+import {
+  hasImoveisMatchingCriteria,
+  matchLeadToProperty,
+  rankLeadsForProperty,
+  type ImoveisMatchingLead,
+} from "@/lib/imoveis/matching";
 import {
   type ImoveisLeadOption,
   type ImoveisLeadPropertyRow,
@@ -86,7 +93,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const leadIds = linkRows.map((link) => link.lead_id);
   const { data: leadRows, error: leadsError } = await crm
     .from("crm_leads")
-    .select("id, title, status, contact_id")
+    .select("id, title, status, contact_id, custom_fields")
     .eq("organization_id", org.orgId)
     .in("status", ["open", "won"])
     .order("created_at", { ascending: false })
@@ -136,7 +143,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     contact_name: lead.contact_id ? contactById.get(lead.contact_id) ?? null : null,
   }));
 
-  const leadById = new Map(leadOptions.map((lead) => [lead.id, lead]));
+  const matchingLeads: ImoveisMatchingLead[] = allLeadRows.map((lead) => ({\n    id: lead.id,\n    title: lead.title,\n    custom_fields: lead.custom_fields ?? {},\n  }));\n  const matchingProperty = {\n    id: typedProperty.id,\n    title: typedProperty.title,\n    status: typedProperty.status,\n    price_cents: typedProperty.price_cents,\n    currency: typedProperty.currency,\n    property_type: typedProperty.property_type,\n    listing_type: typedProperty.listing_type,\n    city: typedProperty.city,\n    bedrooms: typedProperty.bedrooms,\n    bathrooms: typedProperty.bathrooms,\n    area_m2: typedProperty.area_m2,\n  };\n\n  const matchingResults = matchingLeads.map((lead) => matchLeadToProperty(lead, matchingProperty));\n  const matches = rankLeadsForProperty(matchingLeads, matchingProperty);\n  const excludedCount = matchingResults.filter((result) => result.excluded).length;\n  const leadsWithCriteria = matchingLeads.filter((lead) => hasImoveisMatchingCriteria(lead.custom_fields)).length;\n\n  const leadById = new Map(leadOptions.map((lead) => [lead.id, lead]));
   const initialLeadLinks = linkRows.map((link) => ({
     ...link,
     lead: leadById.get(link.lead_id) ?? null,
