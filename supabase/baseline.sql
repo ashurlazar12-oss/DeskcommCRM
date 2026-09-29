@@ -43081,7 +43081,7 @@ $f$;
 revoke execute on function public.fn_imoveis_provisionar() from public, anon, authenticated;
 grant execute on function public.fn_imoveis_provisionar() to service_role;
 
--- ---- Imóveis Fase 6: integração com leads/clientes ----
+-- ---- integração de Imóveis com leads/clientes (migration 0488) ----
 -- O baseline é a fonte de verdade para instalações novas e updates self-host.
 -- Este apêndice é idempotente e fica ANTES da varredura final de EXECUTE.
 
