@@ -5,9 +5,11 @@ import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { readMarketingInitialData } from "@/lib/imoveis/marketing";
+import type { ImoveisLeadOption, ImoveisLeadPropertyRow } from "@/lib/imoveis/leads";
 
 import { ImovelDetalhe } from "./_client";
 import { MarketingPanel } from "./marketing-client";
+import { LeadPropertyClient } from "./lead-property-client";
 
 export const dynamic = "force-dynamic";
 
@@ -57,6 +59,80 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     ? []
     : ((images ?? []) as ImovelImagemRow[]);
 
+  const { data: links, error: linksError } = await supabase
+    .from("imoveis_lead_properties")
+    .select("id, organization_id, lead_id, property_id, relationship, notes, created_at, updated_at")
+    .eq("property_id", property.id)
+    .eq("organization_id", org.orgId)
+    .order("updated_at", { ascending: false });
+
+  if (linksError && !tabelaNaoInstalada(linksError)) {
+    throw new Error(linksError.message);
+  }
+
+  const linkRows = linksError && tabelaNaoInstalada(linksError)
+    ? []
+    : ((links ?? []) as ImoveisLeadPropertyRow[]);
+
+  const leadIds = linkRows.map((link) => link.lead_id);
+  const { data: leadRows, error: leadsError } = await supabase
+    .from("crm_leads")
+    .select("id, title, status, contact_id")
+    .eq("organization_id", org.orgId)
+    .in("status", ["open", "won"])
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (leadsError) {
+    throw new Error(leadsError.message);
+  }
+
+  const allLeadRows = (leadRows ?? []) as Array<{
+    id: string;
+    title: string;
+    status: "open" | "won" | "lost";
+    contact_id: string | null;
+  }>;
+  const contactIds = Array.from(
+    new Set([
+      ...allLeadRows.map((lead) => lead.contact_id).filter((id): id is string => !!id),
+      ...leadIds,
+    ]),
+  );
+
+  const { data: contacts } = contactIds.length
+    ? await supabase
+        .from("contacts")
+        .select("id, name, display_name")
+        .eq("organization_id", org.orgId)
+        .in("id", contactIds)
+    : { data: [] as Array<{ id: string; name: string | null; display_name: string | null }> };
+
+  const contactById = new Map(
+    ((contacts ?? []) as Array<{
+      id: string;
+      name: string | null;
+      display_name: string | null;
+    }>).map((contact) => [
+      contact.id,
+      contact.display_name || contact.name || null,
+    ]),
+  );
+
+  const leadOptions: ImoveisLeadOption[] = allLeadRows.map((lead) => ({
+    id: lead.id,
+    title: lead.title,
+    status: lead.status,
+    contact_id: lead.contact_id,
+    contact_name: lead.contact_id ? contactById.get(lead.contact_id) ?? null : null,
+  }));
+
+  const leadById = new Map(leadOptions.map((lead) => [lead.id, lead]));
+  const initialLeadLinks = linkRows.map((link) => ({
+    ...link,
+    lead: leadById.get(link.lead_id) ?? null,
+  }));
+
   const typedProperty = property as ImovelRow;
   const t = (texto: string) => traduzir(texto, user.idioma);
   const podeGerenciar =
@@ -74,6 +150,12 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         initialImages={initialImages}
         podeGerenciar={podeGerenciar}
         podeExcluir={podeExcluir}
+      />
+      <LeadPropertyClient
+        propertyId={typedProperty.id}
+        initialLinks={initialLeadLinks}
+        leadOptions={leadOptions}
+        podeGerenciar={podeGerenciar}
       />
       <MarketingPanel
         propertyId={typedProperty.id}
