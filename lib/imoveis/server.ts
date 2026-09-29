@@ -14,14 +14,15 @@ export const IMOVEIS_STATUS = [
 export const IMOVEIS_PROPERTY_TYPES = [
   "house",
   "apartment",
+  "villa",
+  "office",
+  "shop",
   "land",
-  "commercial",
-  "commercial_room",
   "warehouse",
   "other",
 ] as const;
 
-export const IMOVEIS_LISTING_TYPES = ["sale", "rent"] as const;
+export const IMOVEIS_LISTING_TYPES = ["sale", "rent", "both"] as const;
 
 export type ImovelStatus = (typeof IMOVEIS_STATUS)[number];
 export type ImovelPropertyType = (typeof IMOVEIS_PROPERTY_TYPES)[number];
@@ -49,7 +50,7 @@ export type ImovelRow = {
   updated_at: string;
 };
 
-export type ImovelImagemRow = {
+export type ImovelImage = {
   id: string;
   organization_id: string;
   property_id: string;
@@ -67,19 +68,18 @@ type ImoveisDatabase = {
         Insert: Partial<ImovelRow> & {
           organization_id: string;
           price_cents: number;
-          currency?: string;
         };
         Update: Partial<ImovelRow>;
         Relationships: [];
       };
       imoveis_property_images: {
-        Row: ImovelImagemRow;
-        Insert: Partial<ImovelImagemRow> & {
+        Row: ImovelImage;
+        Insert: Partial<ImovelImage> & {
           organization_id: string;
           property_id: string;
           image_url: string;
         };
-        Update: Partial<ImovelImagemRow>;
+        Update: Partial<ImovelImage>;
         Relationships: [];
       };
     };
