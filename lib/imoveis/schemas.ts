@@ -19,9 +19,22 @@ const decimalOpcional = z
   .optional()
   .or(z.literal(""))
   .refine(
-    (value) => value === "" || /^\d{1,6}(?:[.,]\d{1,2})?$/.test(value),
+    (value) =>
+      value === undefined ||
+      value === "" ||
+      /^-?\d{1,6}(?:[.,]\d{1,2})?$/.test(value),
     "Informe um número válido.",
   );
+
+function coordenadaOpcional(maxAbs: number) {
+  return decimalOpcional.refine(
+    (value) =>
+      value === undefined ||
+      value === "" ||
+      Math.abs(Number(value.replace(",", "."))) <= maxAbs,
+    "Informe uma coordenada válida.",
+  );
+}
 
 export const imovelFormSchema = z.object({
   property_code: textoOpcional,
