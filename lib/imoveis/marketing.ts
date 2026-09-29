@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { byteaToBuffer, decryptKey } from "@/lib/crypto/aes_gcm";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { ImovelImagemRow, ImovelRow } from "@/lib/imoveis/server";
 
 export const IMOVEIS_SOCIAL_PLATFORMS = ["instagram", "facebook"] as const;
 export type ImoveisSocialPlatform = (typeof IMOVEIS_SOCIAL_PLATFORMS)[number];
@@ -63,7 +64,7 @@ export type PublicationJobRow = {
   updated_at: string;
 };
 
-type MarketingDatabase = {
+export type MarketingDatabase = {
   public: {
     Tables: {
       imoveis_social_accounts: {
@@ -72,6 +73,18 @@ type MarketingDatabase = {
           access_token_iv: unknown;
           access_token_tag: unknown;
         };
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      imoveis_properties: {
+        Row: ImovelRow;
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      imoveis_property_images: {
+        Row: ImovelImagemRow;
         Insert: Record<string, unknown>;
         Update: Record<string, unknown>;
         Relationships: [];
@@ -184,7 +197,13 @@ export async function emitPublicationRequested(
   actorUserId: string | null,
 ): Promise<void> {
   const admin = createAdminClient();
-  const { error } = await admin.rpc("emit_event", {
+  const db = admin as unknown as {
+    rpc(
+      name: string,
+      params: Record<string, unknown>,
+    ): Promise<{ data: unknown; error: { message: string } | null }>;
+  };
+  const { error } = await db.rpc("emit_event", {
     p_event_type: "imoveis.social_publish_requested",
     p_entity_kind: "imoveis_publication_job",
     p_entity_id: jobId,
