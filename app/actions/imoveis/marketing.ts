@@ -90,7 +90,7 @@ export const marketingCopySchema = z.object({
   alt_text: z.string().trim().min(1).max(300),
 });
 
-export function montarPromptMarketing(input: {
+export async function montarPromptMarketing(input: {
   language: ImoveisMarketingLanguage;
   platform: ImoveisSocialPlatform;
   property: Record<string, unknown>;
@@ -243,7 +243,7 @@ export async function gerarMarketingImovel(formData: FormData): Promise<Marketin
   const result = await generateText({
     model,
     system: "Você é um redator imobiliário disciplinado. A exatidão factual é obrigatória. Não invente dados.",
-    prompt: montarPromptMarketing({
+    prompt: await montarPromptMarketing({
       language: parsed.data.language,
       platform: parsed.data.platform,
       property: property as unknown as Record<string, unknown>,
