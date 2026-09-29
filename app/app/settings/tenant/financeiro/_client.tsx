@@ -100,7 +100,7 @@ export function CatalogoFinanceiro({ podeEditar }: { podeEditar: boolean }) {
         {podeEditar ? (
           <div className="flex flex-wrap items-end gap-2">
             <input
-              aria-label={t("Nome da conta")}
+              aria-label={t("Nome da conta financeira")}
               className="min-h-11 rounded-md border p-2"
               placeholder={t("Ex.: Caixa")}
               value={nomeConta}
