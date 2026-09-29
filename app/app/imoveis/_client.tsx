@@ -13,6 +13,7 @@ import {
   excluirImovel,
   type ImovelActionResult,
 } from "@/app/actions/imoveis/properties";
+import { filtrarImoveis, type ImovelFiltro } from "@/lib/imoveis/filters";
 import type { ImovelRow, ImovelStatus } from "@/lib/imoveis/server";
 
 const STATUS_LABELS: Record<ImovelStatus, string> = {
@@ -45,7 +46,12 @@ export function Imoveis({
   const [pending, startTransition] = useTransition();
   const [feedback, setFeedback] = useState(erroInicial ?? "");
   const [currency, setCurrency] = useState("USD");
+  const [filtro, setFiltro] = useState<ImovelFiltro>({ busca: "", status: "all" });
 
+  const filteredProperties = useMemo(
+    () => filtrarImoveis(initialProperties, filtro),
+    [initialProperties, filtro],
+  );
   const total = initialProperties.length;
   const disponiveis = useMemo(
     () => initialProperties.filter((property) => property.status === "available").length,
@@ -107,8 +113,10 @@ export function Imoveis({
             className="grid gap-4 md:grid-cols-[1.2fr_0.9fr_1fr_0.7fr_auto] md:items-end"
             onSubmit={(event) => {
               event.preventDefault();
-              executar(criarImovel, new FormData(event.currentTarget), () => {
-                event.currentTarget.reset();
+              const form = event.currentTarget;
+              const formData = new FormData(form);
+              executar(criarImovel, formData, () => {
+                form.reset();
                 setCurrency("USD");
               });
             }}
@@ -171,12 +179,59 @@ export function Imoveis({
               {t("Os registros desta organização, protegidos pela mesma RLS do banco.")}
             </p>
           </div>
-          <span className="font-mono text-xs text-text-muted">200 max</span>
+          <span className="font-mono text-xs text-text-muted">{filteredProperties.length}/{total}</span>
+        </div>
+
+        <div className="mb-4 grid gap-3 rounded-md border border-border bg-surface p-3 md:grid-cols-[1fr_220px_auto] md:items-end">
+          <label className="flex flex-col gap-1">
+            <span className="text-xs text-text-muted">{t("Código")}</span>
+            <input
+              value={filtro.busca}
+              onChange={(event) => setFiltro((current) => ({ ...current, busca: event.target.value }))}
+              className="h-9 rounded-xs border border-border bg-surface-elevated px-3 text-sm text-text"
+              placeholder={t("Código")}
+              aria-label={t("Código")}
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs text-text-muted">{t("Situação")}</span>
+            <select
+              value={filtro.status}
+              onChange={(event) =>
+                setFiltro((current) => ({
+                  ...current,
+                  status: event.target.value as ImovelFiltro["status"],
+                }))
+              }
+              className="h-9 rounded-xs border border-border bg-surface-elevated px-3 text-sm text-text"
+              aria-label={t("Situação")}
+            >
+              <option value="all">{t("Todos")}</option>
+              {(Object.keys(STATUS_LABELS) as ImovelStatus[]).map((status) => (
+                <option key={status} value={status}>
+                  {t(STATUS_LABELS[status])}
+                </option>
+              ))}
+            </select>
+          </label>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setFiltro({ busca: "", status: "all" })}
+            disabled={!filtro.busca && filtro.status === "all"}
+          >
+            {t("Limpar")}
+          </Button>
         </div>
 
         {initialProperties.length === 0 ? (
           <div className="rounded-md border border-border p-8 text-sm text-text-muted">
             {t("Nenhuma propriedade cadastrada ainda.")}
+          </div>
+        ) : filteredProperties.length === 0 ? (
+          <div className="rounded-md border border-border p-8 text-sm text-text-muted">
+            {t("Nenhum resultado encontrado.")}
           </div>
         ) : (
           <div className="flex min-w-0 flex-col gap-2">
@@ -188,7 +243,7 @@ export function Imoveis({
               <span />
             </div>
 
-            {initialProperties.map((property) => (
+            {filteredProperties.map((property) => (
               <div key={property.id} className="rounded-sm border border-border bg-surface p-3">
                 <form
                   className="grid min-w-0 gap-3 md:grid-cols-[1.2fr_0.9fr_1fr_0.7fr_auto] md:items-center"

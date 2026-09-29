@@ -13378,6 +13378,7 @@ export const DICIONARIO: Traducoes = {
     es: "Los registros de esta organización, protegidos por la misma RLS de la base de datos.",
   },
   "Nenhuma propriedade cadastrada ainda.": { es: "Aún no hay propiedades registradas." },
+  "Nenhum resultado encontrado.": { es: "No se encontraron resultados." },
 
   "O agente consulta o banco de outro sistema da empresa, como um ERP ou outro CRM.": { es: "El agente consulta la base de datos de otro sistema de la empresa, como un ERP u otro CRM." },
   "A IA conduz um roteiro de perguntas na conversa e grava as respostas na ficha do cliente.": { es: "La IA conduce un guion de preguntas en la conversación y guarda las respuestas en la ficha del cliente." },
