@@ -31,6 +31,7 @@ describe("imoveis matching", () => {
           imoveis_property_type: "house",
           imoveis_max_price_cents: 1_000_000,
           imoveis_min_bedrooms: 3,
+          imoveis_min_bathrooms: 2,
           imoveis_min_area_m2: 150,
           imoveis_city: "Erbil",
         },
