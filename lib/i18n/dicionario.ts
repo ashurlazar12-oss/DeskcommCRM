@@ -13456,6 +13456,8 @@ export const DICIONARIO: Traducoes = {
   },
   "Nenhuma conta social conectada.": { es: "No hay cuentas sociales conectadas." },
   "Conectar conta social": { es: "Conectar cuenta social" },
+  "Nome da conta social": { es: "Nombre de la cuenta social" },
+  "Token de acesso social": { es: "Token de acceso social" },
   "ID da conta / Página": { es: "ID de la cuenta / Página" },
   "Fila de publicações": { es: "Cola de publicaciones" },
   "Falhou": { es: "Falló" },
