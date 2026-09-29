@@ -37,6 +37,13 @@ import type { Idioma } from "./idiomas";
 type Traducoes = Record<string, Partial<Record<Exclude<Idioma, "pt-BR">, string>>>;
 
 export const DICIONARIO: Traducoes = {
+  "Leads e clientes": {"es": "Leads y clientes"},
+  "Ligue esta propriedade aos negócios do CRM. O vínculo é a base para matching e acompanhamento comercial futuros.": {"es": "Vincula esta propiedad a los negocios del CRM. El vínculo es la base para el matching y el seguimiento comercial futuros."},
+  "Selecione um lead": {"es": "Selecciona un lead"},
+  "Relação": {"es": "Relación"},
+  "Nenhum lead disponível nesta organização.": {"es": "No hay leads disponibles en esta organización."},
+  "Nenhum lead está vinculado a esta propriedade.": {"es": "No hay leads vinculados a esta propiedad."},
+  "Remover este vínculo?": {"es": "¿Eliminar este vínculo?"},
   // ─── EMPRESAS, PESSOAS E IMPORTAÇÃO (metade B2B do #1621, de @renatofortal) ───
   "Arquivo": {"es": "Archivo"},
   "Atualizado": {"es": "Actualizado"},
