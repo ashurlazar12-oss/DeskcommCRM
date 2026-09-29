@@ -96,17 +96,14 @@ describe("Imóveis marketing — isolamento", () => {
     expect(writeCountAs(USER_B, `update public.imoveis_marketing_assets set caption = 'cross' where id = '${ASSET_A}'`)).toBe(0);
   });
 
-  it("manager de B não cria job usando conta de A", () => {
-    expect(writeCountAs(USER_B, `
-      insert into public.imoveis_publication_jobs
-        (organization_id, property_id, marketing_asset_id, social_account_id)
-      values ('${ORG_B}', '${PROPERTY_B}', '${ASSET_B}', '${ACCOUNT_A}')
-    `)).toBe(0);
+  it("manager de B não altera job de A", () => {
+    expect(writeCountAs(USER_B, `update public.imoveis_publication_jobs set status='cancelled' where id='${JOB_A}'`)).toBe(0);
   });
 
-  it("viewer não altera conta social; manager pode", () => {
-    expect(writeCountAs(GOV_VIEWER, `update public.imoveis_social_accounts set status='disabled' where id='${ACCOUNT_A}'`)).toBe(0);
-    expect(writeCountAs(GOV_MANAGER, `update public.imoveis_social_accounts set status='disabled' where id='${ACCOUNT_A}'`)).toBe(1);
+  it("a tabela de credenciais sociais é server-only também para manager", () => {
+    expect(countAs(GOV_VIEWER, `select count(*) from public.imoveis_social_accounts where id = '${ACCOUNT_A}'`)).toBe(0);
+    expect(countAs(GOV_MANAGER, `select count(*) from public.imoveis_social_accounts where id = '${ACCOUNT_A}'`)).toBe(0);
+    expect(sql(`select not has_table_privilege('authenticated', 'public.imoveis_social_accounts', 'select') and not has_table_privilege('authenticated', 'public.imoveis_social_accounts', 'update');`)).toBe(true);
   });
 
   it("job de A fica invisível para B", () => {
