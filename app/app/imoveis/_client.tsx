@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,12 @@ import {
   type ImovelActionResult,
 } from "@/app/actions/imoveis/properties";
 import { filtrarImoveis, type ImovelFiltro } from "@/lib/imoveis/filters";
-import type { ImovelRow, ImovelStatus } from "@/lib/imoveis/server";
+import type {
+  ImovelListingType,
+  ImovelPropertyType,
+  ImovelRow,
+  ImovelStatus,
+} from "@/lib/imoveis/server";
 
 const STATUS_LABELS: Record<ImovelStatus, string> = {
   draft: "Rascunho",
@@ -24,6 +29,21 @@ const STATUS_LABELS: Record<ImovelStatus, string> = {
   sold: "Vendido",
   rented: "Alugado",
   archived: "Arquivado",
+};
+
+const PROPERTY_TYPE_LABELS: Record<ImovelPropertyType, string> = {
+  house: "Casa",
+  apartment: "Apartamento",
+  land: "Terreno",
+  commercial: "Comercial",
+  commercial_room: "Sala comercial",
+  warehouse: "Galpão",
+  other: "Outro",
+};
+
+const LISTING_TYPE_LABELS: Record<ImovelListingType, string> = {
+  sale: "Venda",
+  rent: "Aluguel",
 };
 
 function aplicarResultado(result: ImovelActionResult, setFeedback: (value: string) => void) {
@@ -111,7 +131,7 @@ export function Imoveis({
           </div>
 
           <form
-            className="grid gap-4 md:grid-cols-[1.2fr_0.9fr_1fr_0.7fr_auto] md:items-end"
+            className="grid gap-4 md:grid-cols-[1.4fr_0.9fr_1fr_0.7fr_auto]"
             onSubmit={(event) => {
               event.preventDefault();
               const form = event.currentTarget;
@@ -122,6 +142,17 @@ export function Imoveis({
               });
             }}
           >
+            <input type="hidden" name="property_type" value="other" />
+            <input type="hidden" name="listing_type" value="sale" />
+            <input type="hidden" name="title" value="" />
+            <input type="hidden" name="description" value="" />
+            <input type="hidden" name="address" value="" />
+            <input type="hidden" name="city" value="" />
+            <input type="hidden" name="latitude" value="" />
+            <input type="hidden" name="longitude" value="" />
+            <input type="hidden" name="bedrooms" value="0" />
+            <input type="hidden" name="bathrooms" value="" />
+            <input type="hidden" name="area_m2" value="" />
             <label className="flex flex-col gap-1">
               <span className="text-xs text-text-muted">{t("Código da propriedade")}</span>
               <input
@@ -180,7 +211,9 @@ export function Imoveis({
               {t("Os registros desta organização, protegidos pela mesma RLS do banco.")}
             </p>
           </div>
-          <span className="font-mono text-xs text-text-muted">{filteredProperties.length}/{total}</span>
+          <span className="font-mono text-xs text-text-muted">
+            {filteredProperties.length}/{total}
+          </span>
         </div>
 
         <div className="mb-4 grid gap-3 rounded-md border border-border bg-surface p-3 md:grid-cols-[1fr_220px_auto] md:items-end">
@@ -188,7 +221,9 @@ export function Imoveis({
             <span className="text-xs text-text-muted">{t("Código")}</span>
             <input
               value={filtro.busca}
-              onChange={(event) => setFiltro((current) => ({ ...current, busca: event.target.value }))}
+              onChange={(event) =>
+                setFiltro((current) => ({ ...current, busca: event.target.value }))
+              }
               className="h-9 rounded-xs border border-border bg-surface-elevated px-3 text-sm text-text"
               placeholder={t("Código")}
               aria-label={t("Código")}
@@ -236,7 +271,7 @@ export function Imoveis({
           </div>
         ) : (
           <div className="flex min-w-0 flex-col gap-2">
-            <div className="hidden grid-cols-[1.2fr_0.9fr_1fr_0.7fr_auto] gap-3 px-3 text-xs text-text-muted md:grid">
+            <div className="hidden grid-cols-[1.3fr_0.9fr_1fr_0.7fr_auto] gap-3 px-3 text-xs text-text-muted md:grid">
               <span>{t("Código")}</span>
               <span>{t("Situação")}</span>
               <span>{t("Preço")}</span>
@@ -247,20 +282,52 @@ export function Imoveis({
             {filteredProperties.map((property) => (
               <div key={property.id} className="rounded-sm border border-border bg-surface p-3">
                 <form
-                  className="grid min-w-0 gap-3 md:grid-cols-[1.2fr_0.9fr_1fr_0.7fr_auto] md:items-center"
+                  className="grid min-w-0 gap-3 md:grid-cols-[1.3fr_0.9fr_1fr_0.7fr_auto] md:items-center"
                   onSubmit={(event) => {
                     event.preventDefault();
                     executar(atualizarImovel, new FormData(event.currentTarget));
                   }}
                 >
                   <input type="hidden" name="id" value={property.id} />
+                  <input type="hidden" name="title" value={property.title} />
+                  <input type="hidden" name="property_type" value={property.property_type} />
+                  <input type="hidden" name="listing_type" value={property.listing_type} />
+                  <input type="hidden" name="description" value={property.description} />
+                  <input type="hidden" name="address" value={property.address} />
+                  <input type="hidden" name="city" value={property.city} />
                   <input
-                    name="property_code"
-                    defaultValue={property.property_code}
-                    maxLength={80}
-                    className="h-9 min-w-0 rounded-xs border border-border bg-surface-elevated px-3 font-mono text-xs text-text"
-                    aria-label={t("Código")}
+                    type="hidden"
+                    name="latitude"
+                    value={property.latitude == null ? "" : String(property.latitude)}
                   />
+                  <input
+                    type="hidden"
+                    name="longitude"
+                    value={property.longitude == null ? "" : String(property.longitude)}
+                  />
+                  <input type="hidden" name="bedrooms" value={String(property.bedrooms)} />
+                  <input type="hidden" name="bathrooms" value={String(property.bathrooms)} />
+                  <input type="hidden" name="area_m2" value={String(property.area_m2)} />
+
+                  <div className="min-w-0">
+                    <Link
+                      href={`/app/imoveis/${property.id}`}
+                      className="font-mono text-xs font-medium text-text underline-offset-2 hover:underline"
+                    >
+                      {property.property_code}
+                    </Link>
+                    {property.title ? (
+                      <p className="mt-1 truncate text-xs text-text-muted">{property.title}</p>
+                    ) : null}
+                    <input
+                      name="property_code"
+                      defaultValue={property.property_code}
+                      maxLength={80}
+                      className="mt-2 h-9 min-w-0 w-full rounded-xs border border-border bg-surface-elevated px-3 font-mono text-xs text-text md:hidden"
+                      aria-label={t("Código")}
+                    />
+                  </div>
+
                   <select
                     name="status"
                     defaultValue={property.status}
@@ -273,15 +340,16 @@ export function Imoveis({
                       </option>
                     ))}
                   </select>
-                  <input
-                    name="price"
-                    defaultValue={(property.price_cents / 100).toFixed(2).replace(".", ",")}
-                    inputMode="decimal"
-                    required
-                    className="h-9 min-w-0 rounded-xs border border-border bg-surface-elevated px-3 text-sm text-text"
-                    aria-label={t("Preço")}
-                  />
+
                   <div className="flex gap-2">
+                    <input
+                      name="price"
+                      defaultValue={(property.price_cents / 100).toFixed(2).replace(".", ",")}
+                      inputMode="decimal"
+                      required
+                      className="h-9 min-w-0 flex-1 rounded-xs border border-border bg-surface-elevated px-3 text-sm text-text"
+                      aria-label={t("Preço")}
+                    />
                     <input
                       name="currency"
                       defaultValue={property.currency}
@@ -289,18 +357,25 @@ export function Imoveis({
                       className="h-9 w-16 rounded-xs border border-border bg-surface-elevated px-2 text-xs uppercase text-text"
                       aria-label={t("Moeda")}
                     />
-                    <time
-                      dateTime={property.updated_at}
-                      className="hidden text-xs text-text-muted md:block md:truncate"
-                    >
-                      {new Date(property.updated_at).toLocaleDateString(locale)}
-                    </time>
                   </div>
-                  <div className="flex items-center gap-2 md:justify-end">
+
+                  <time
+                    dateTime={property.updated_at}
+                    className="text-xs text-text-muted md:truncate"
+                    title={new Date(property.updated_at).toLocaleString(locale)}
+                  >
+                    {new Date(property.updated_at).toLocaleDateString(locale)}
+                  </time>
+
+                  <div className="flex flex-wrap items-center gap-2 md:justify-end">
+                    <Link
+                      href={`/app/imoveis/${property.id}`}
+                      className="text-xs text-text-muted underline-offset-2 hover:underline"
+                    >
+                      {t("Abrir ficha")}
+                    </Link>
                     <Button type="submit" disabled={pending} variant="outline" size="sm">
                       {pending ? t("Salvando…") : t("Salvar")}
-                    </Button>
-                    <Link href={"/app/imoveis/" + property.id} className="text-xs text-text-muted hover:text-text">{t("Abrir ficha")}</Link>
                     </Button>
                     {podeExcluir ? (
                       <Button
