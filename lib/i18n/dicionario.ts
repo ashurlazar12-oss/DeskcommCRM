@@ -13379,6 +13379,9 @@ export const DICIONARIO: Traducoes = {
   },
   "Nenhuma propriedade cadastrada ainda.": { es: "Aún no hay propiedades registradas." },
   "Nenhum resultado encontrado.": { es: "No se encontraron resultados." },
+  "O módulo de imóveis não está instalado nesta instalação. Peça ao administrador para instalá-lo em Configurações da instalação › Módulos.": {
+    es: "El módulo de inmuebles no está instalado en esta instalación. Pida al administrador que lo instale en Configuración de la instalación › Módulos.",
+  },
   "Casa": { es: "Casa" },
   "Apartamento": { es: "Apartamento" },
   "Terreno": { es: "Terreno" },
