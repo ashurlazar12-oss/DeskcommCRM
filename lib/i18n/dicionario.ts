@@ -13459,6 +13459,22 @@ export const DICIONARIO: Traducoes = {
   "Data de publicação": { es: "Fecha de publicación" },
   "Aprovar e publicar": { es: "Aprobar y publicar" },
   "Contas sociais": { es: "Cuentas sociales" },
+  "O token fica cifrado no servidor e nunca é enviado ao navegador novamente.": {
+    es: "El token queda cifrado en el servidor y nunca se vuelve a enviar al navegador.",
+  },
+  "Nenhuma conta social conectada.": { es: "No hay cuentas sociales conectadas." },
+  "Desativar": { es: "Desactivar" },
+  "Conectar conta social": { es: "Conectar cuenta social" },
+  "Nome da conta": { es: "Nombre de la cuenta" },
+  "ID da conta / Página": { es: "ID de la cuenta / Página" },
+  "Token de acesso": { es: "Token de acceso" },
+  "Conectar": { es: "Conectar" },
+  "Fila de publicações": { es: "Cola de publicaciones" },
+  "Falhou": { es: "Falló" },
+  "Publicando": { es: "Publicando" },
+  "Agendado": { es: "Programado" },
+  "Abrir publicação": { es: "Abrir publicación" },
+
 
 
 
