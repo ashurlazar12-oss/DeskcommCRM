@@ -72,6 +72,10 @@ export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null
 #   2. a descoberta de repositório nunca sobe para fora de "$TMP";
 #   3. identidade por ambiente, não por `git config` (NENHUM teste aqui mede o autor).
 unset $(git rev-parse --local-env-vars)
+# The suite models arbitrary PRs and must not inherit the real CI pull-request ref;
+# otherwise the gate correctly excludes that PR as "the one running" and case 18 cannot
+# exercise the intended "NÃO MEDIDO" path for a different listed PR.
+unset GITHUB_REF
 export GIT_CEILING_DIRECTORIES="$TMP"
 export GIT_AUTHOR_NAME="Teste" GIT_AUTHOR_EMAIL="teste@exemplo.invalid"
 export GIT_COMMITTER_NAME="Teste" GIT_COMMITTER_EMAIL="teste@exemplo.invalid"
