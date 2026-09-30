@@ -1013,6 +1013,8 @@ export const AUDIT_ACTIONS = [
   "imoveis.publication_published",
   "imoveis.publication_failed",
 
+  "imoveis.lead_property_linked",
+  "imoveis.lead_property_unlinked",
 ] as const;
 
 /** Um código de auditoria. Derivado de `AUDIT_ACTIONS` — não redigite a lista. */

@@ -37,6 +37,30 @@ import type { Idioma } from "./idiomas";
 type Traducoes = Record<string, Partial<Record<Exclude<Idioma, "pt-BR">, string>>>;
 
 export const DICIONARIO: Traducoes = {
+  "Leads e clientes": {"es": "Leads y clientes"},
+  "Ligue esta propriedade aos negócios do CRM. O vínculo é a base para matching e acompanhamento comercial futuros.": {"es": "Vincula esta propiedad a los negocios del CRM. El vínculo es la base para el matching y el seguimiento comercial futuros."},
+  "Selecione um lead": {"es": "Selecciona un lead"},
+  "Relação": {"es": "Relación"},
+  "Matching de leads": { es: "Matching de leads" },
+  "Mostra somente leads com preferências compatíveis. Critérios incompatíveis são excluídos para evitar recomendações inadequadas.": {
+    es: "Muestra solo leads con preferencias compatibles. Los criterios incompatibles se excluyen para evitar recomendaciones inadecuadas.",
+  },
+  "Nenhum lead possui preferências imobiliárias estruturadas. Cadastre os critérios imobiliários nos custom fields do lead para ativar o matching.": {
+    es: "Ningún lead tiene preferencias inmobiliarias estructuradas. Registra los criterios inmobiliarios en los campos personalizados del lead para activar el matching.",
+  },
+  "Nenhum lead atende aos critérios desta propriedade.": {
+    es: "Ningún lead cumple los criterios de esta propiedad.",
+  },
+  "Alguns leads foram excluídos por incompatibilidade.": {
+    es: "Algunos leads fueron excluidos por incompatibilidad.",
+  },
+  "compatível": { es: "compatible" },
+  "lead(s) foram excluídos por critérios incompatíveis.": {
+    es: "lead(s) fueron excluidos por criterios incompatibles.",
+  },
+  "Nenhum lead disponível nesta organização.": {"es": "No hay leads disponibles en esta organización."},
+  "Nenhum lead está vinculado a esta propriedade.": {"es": "No hay leads vinculados a esta propiedad."},
+  "Remover este vínculo?": {"es": "¿Eliminar este vínculo?"},
   // ─── EMPRESAS, PESSOAS E IMPORTAÇÃO (metade B2B do #1621, de @renatofortal) ───
   "Arquivo": {"es": "Archivo"},
   "Atualizado": {"es": "Actualizado"},
