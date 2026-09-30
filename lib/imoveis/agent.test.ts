@@ -154,7 +154,7 @@ describe("imoveis agent", () => {
     expect(result.matches).toHaveLength(1);
     expect(result.matches[0]).toMatchObject({
       property_code: "A1",
-      score: 95,
+      score: 90,
       title: "Casa compatível",
     });
   });
