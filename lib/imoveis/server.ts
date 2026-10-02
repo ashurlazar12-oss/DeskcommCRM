@@ -53,9 +53,14 @@ export type ImovelImagemRow = {
   id: string;
   organization_id: string;
   property_id: string;
-  image_url: string;
+  image_url: string | null;
   alt_text: string;
   sort_order: number;
+  storage_path: string | null;
+  media_type: "image" | "video";
+  content_type: string | null;
+  original_name: string | null;
+  size_bytes: number | null;
   created_at: string;
 };
 
@@ -76,7 +81,6 @@ type ImoveisDatabase = {
         Insert: Partial<ImovelImagemRow> & {
           organization_id: string;
           property_id: string;
-          image_url: string;
         };
         Update: Partial<ImovelImagemRow>;
         Relationships: [];
