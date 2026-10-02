@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/server";
+import type { ImoveisMediaType } from "./media";
 
 export const IMOVEIS_STATUS = [
   "draft",
@@ -53,10 +54,18 @@ export type ImovelImagemRow = {
   id: string;
   organization_id: string;
   property_id: string;
-  image_url: string;
+  image_url: string | null;
   alt_text: string;
   sort_order: number;
+  media_type: ImoveisMediaType;
+  storage_path: string | null;
+  mime_type: string | null;
+  file_size_bytes: number | null;
   created_at: string;
+};
+
+export type ImovelMidiaComUrl = ImovelImagemRow & {
+  display_url: string;
 };
 
 type ImoveisDatabase = {
@@ -76,7 +85,6 @@ type ImoveisDatabase = {
         Insert: Partial<ImovelImagemRow> & {
           organization_id: string;
           property_id: string;
-          image_url: string;
         };
         Update: Partial<ImovelImagemRow>;
         Relationships: [];
