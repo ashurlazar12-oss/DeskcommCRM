@@ -7,6 +7,7 @@ import { rotuloDoContato } from "@/lib/contacts/rotulo-do-contato";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { readMarketingInitialData } from "@/lib/imoveis/marketing";
+import { IMOVEIS_MEDIA_BUCKET } from "@/lib/imoveis/media";
 import {
   hasImoveisMatchingCriteria,
   matchLeadToProperty,
@@ -23,6 +24,7 @@ import { ImovelDetalhe } from "./_client";
 import { LeadPropertyClient } from "./lead-property-client";
 import { ImoveisMatchingClient } from "./matching-client";
 import { MarketingPanel } from "./marketing-client";
+import { PropertyMediaUpload, type PropertyUploadedMedia } from "./media-upload-client";
 
 export const dynamic = "force-dynamic";
 
@@ -61,7 +63,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
   const { data: images, error: imagesError } = await supabase
     .from("imoveis_property_images")
-    .select("id, organization_id, property_id, image_url, alt_text, sort_order, created_at")
+    .select("id, organization_id, property_id, image_url, alt_text, sort_order, storage_path, media_type, content_type, original_name, size_bytes, created_at")
     .eq("property_id", typedProperty.id)
     .eq("organization_id", org.orgId)
     .order("sort_order", { ascending: true });
@@ -70,10 +72,35 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     throw new Error(imagesError.message);
   }
 
-  const initialImages =
-    imagesError && tabelaNaoInstalada(imagesError)
-      ? []
-      : ((images ?? []) as ImovelImagemRow[]);
+  const imageRows = imagesError && tabelaNaoInstalada(imagesError)
+    ? []
+    : ((images ?? []) as ImovelImagemRow[]);
+  const initialImages = imageRows.filter(
+    (image): image is ImovelImagemRow & { image_url: string } => Boolean(image.image_url) && !image.storage_path,
+  );
+
+  const uploadedRows = imageRows.filter(
+    (image): image is ImovelImagemRow & { storage_path: string } => Boolean(image.storage_path),
+  );
+  const initialUploadedMedia: PropertyUploadedMedia[] = (
+    await Promise.all(
+      uploadedRows.map(async (media) => {
+        const signed = await supabase.storage
+          .from(IMOVEIS_MEDIA_BUCKET)
+          .createSignedUrl(media.storage_path, 60 * 60);
+        if (signed.error || !signed.data?.signedUrl) return null;
+        return {
+          id: media.id,
+          media_type: media.media_type,
+          alt_text: media.alt_text,
+          original_name: media.original_name,
+          content_type: media.content_type,
+          size_bytes: media.size_bytes,
+          preview_url: signed.data.signedUrl,
+        } satisfies PropertyUploadedMedia;
+      }),
+    )
+  ).filter((media): media is PropertyUploadedMedia => media !== null);
 
   const crm = await createClient();
   const linksDb = (await createClient()) as unknown as import("@supabase/supabase-js").SupabaseClient<ImoveisLeadsDatabase>;
@@ -208,6 +235,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         initialImages={initialImages}
         podeGerenciar={podeGerenciar}
         podeExcluir={podeExcluir}
+      />
+      <PropertyMediaUpload
+        propertyId={typedProperty.id}
+        initialMedia={initialUploadedMedia}
+        canManage={podeGerenciar}
       />
       <LeadPropertyClient
         propertyId={typedProperty.id}
